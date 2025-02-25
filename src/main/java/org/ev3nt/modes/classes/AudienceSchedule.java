@@ -1,6 +1,6 @@
-package modes.classes;
+package org.ev3nt.modes.classes;
 
-import gui.interfaces.ComboBoxItem;
+import org.ev3nt.gui.interfaces.ComboBoxItem;
 
 import javax.swing.*;
 
@@ -12,6 +12,6 @@ public class AudienceSchedule implements ComboBoxItem {
 
     @Override
     public void showContent(JPanel contentPanel) {
-
+        contentPanel.add(new JLabel("Тестовое поле"));
     }
 }

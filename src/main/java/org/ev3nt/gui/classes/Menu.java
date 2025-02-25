@@ -1,12 +1,13 @@
-package gui.classes;
+package org.ev3nt.gui.classes;
 
-import gui.interfaces.ComboBoxItem;
+import org.ev3nt.gui.interfaces.ComboBoxItem;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
+import java.util.function.Supplier;
 
 public class Menu {
     public Menu(String title, int width, int height) {
@@ -17,7 +18,7 @@ public class Menu {
         menu.setLocationRelativeTo(null);
 
         comboBox = new JComboBox<>();
-        comboBox.addActionListener((ActionListener) new ComboBoxListener());
+        comboBox.addActionListener(new ComboBoxListener());
         itemHashMap = new HashMap<>();
 
         contentPanel = new JPanel();
@@ -28,7 +29,8 @@ public class Menu {
         menu.add(contentPanel, BorderLayout.CENTER);
     }
 
-    public void add(ComboBoxItem item) {
+    public <T extends ComboBoxItem> void add(Supplier<T> itemFactory) {
+        T item = itemFactory.get();
         itemHashMap.put(item.getName(), item);
         comboBox.addItem(item.getName());
     }
@@ -54,9 +56,9 @@ public class Menu {
         contentPanel.repaint();
     }
 
-    private JFrame menu;
-    private JComboBox<String> comboBox;
-    private JPanel contentPanel;
+    private final JFrame menu;
+    private final JComboBox<String> comboBox;
+    private final JPanel contentPanel;
 
-    private HashMap<String, ComboBoxItem> itemHashMap;
+    private final HashMap<String, ComboBoxItem> itemHashMap;
 }

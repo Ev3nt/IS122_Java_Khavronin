@@ -1,4 +1,4 @@
-package gui.interfaces;
+package org.ev3nt.gui.interfaces;
 
 import javax.swing.*;
 
