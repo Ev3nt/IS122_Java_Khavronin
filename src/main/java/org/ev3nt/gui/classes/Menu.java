@@ -16,6 +16,7 @@ public class Menu {
         menu.setSize(width, height);
         menu.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         menu.setResizable(false);
+        menu.setLocationRelativeTo(null);
 
         comboBox = new JComboBox<>();
         comboBox.addActionListener(new ComboBoxListener());

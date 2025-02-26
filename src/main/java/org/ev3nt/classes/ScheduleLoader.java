@@ -18,7 +18,7 @@ public class ScheduleLoader {
             json = CacheManager.getCachedDataAsString(cacheName);
 
             if (json.isEmpty()) {
-                throw new ScheduleException("Не удалось получить расписание");
+                throw new ScheduleException("Не удалось получить расписание!");
             }
         } else {
             CacheManager.saveDataAsCache(cacheName, json);

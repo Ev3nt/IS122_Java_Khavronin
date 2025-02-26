@@ -190,7 +190,7 @@ public class GroupSchedule implements ComboBoxItem {
                     semester = Integer.parseInt(semesterField.getText());
                     year = Integer.parseInt(yearField.getText());
                 } catch (NumberFormatException e) {
-                    message = "Неверный формат числа";
+                    message = "Неверный формат числа!";
                 }
             }
 
@@ -202,12 +202,14 @@ public class GroupSchedule implements ComboBoxItem {
                 ScheduleLoader loader = new ScheduleLoader(HttpSchedule::new);
                 String json = loader.getSchedule(group, semester, year);
                 Process(json);
+
+                JOptionPane.showMessageDialog(null, "Расписание успешно составлено!", "Сообщение", JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException | TemplateException | GroupException e) {
                 if (e.getClass() == GroupException.class) {
                     CacheManager.deleteLastCachedFile();
                 }
 
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Сообщение", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(null, e.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
