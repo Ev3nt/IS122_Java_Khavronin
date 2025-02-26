@@ -14,7 +14,7 @@ public class CacheManager {
     static public Object getCachedDataAsStream(Path name, StreamType type) {
         Object stream = null;
 
-        if (name != null && name.toFile().exists()) {
+        if (name != null) {
             try {
                 Files.createDirectory(cacheDir);
             } catch (IOException e) {
@@ -23,7 +23,7 @@ public class CacheManager {
 
             try {
                 Path fullName = cacheDir.resolve(name);
-                if (type == StreamType.INPUT) {
+                if (type == StreamType.INPUT && fullName.toFile().exists()) {
                     stream = new FileInputStream(fullName.toFile());
                 } else {
                     stream = new FileOutputStream(fullName.toFile());
@@ -77,7 +77,7 @@ public class CacheManager {
 
     static public void deleteLastCachedFile() {
         try {
-            if (lastCachedFileName != null && lastCachedFileName.toFile().exists()) {
+            if (lastCachedFileName != null) {
                 Files.deleteIfExists(cacheDir.resolve(lastCachedFileName));
             }
         } catch (IOException e) {
