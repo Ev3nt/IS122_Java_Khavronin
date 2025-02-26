@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
@@ -42,7 +43,8 @@ public class ZipCustomCopy implements AutoCloseable {
     }
 
     public void add(String name, byte[] b) {
-        contentMap.put(name.replace("\\", "/"), b);
+        Path path = Path.of(name);
+        contentMap.put(path.subpath(0, path.getNameCount()).toString().replace("\\", "/"), b);
     }
 
     public void add(String name, String data) {

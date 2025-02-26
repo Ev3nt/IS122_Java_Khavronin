@@ -40,3 +40,4 @@ build/
 ### Project ###
 schedules/
 cache/
+templates/
