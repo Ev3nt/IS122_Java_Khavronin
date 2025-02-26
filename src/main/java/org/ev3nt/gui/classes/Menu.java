@@ -15,14 +15,14 @@ public class Menu {
         menu.setTitle(title);
         menu.setSize(width, height);
         menu.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        menu.setLocationRelativeTo(null);
+        menu.setResizable(false);
 
         comboBox = new JComboBox<>();
         comboBox.addActionListener(new ComboBoxListener());
         itemHashMap = new HashMap<>();
 
         contentPanel = new JPanel();
-        contentPanel.setLayout(new FlowLayout());
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.PAGE_AXIS));
 
         menu.setLayout(new BorderLayout());
         menu.add(comboBox, BorderLayout.NORTH);

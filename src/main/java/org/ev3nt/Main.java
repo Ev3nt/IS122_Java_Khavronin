@@ -6,7 +6,7 @@ import org.ev3nt.modes.classes.GroupSchedule;
 
 public class Main {
     public static void main(String[] args) {
-        Menu menu = new Menu("Test Window", 200, 200);
+        Menu menu = new Menu("Test Window", 300, 200);
         menu.run();
 
         menu.add(GroupSchedule::new);

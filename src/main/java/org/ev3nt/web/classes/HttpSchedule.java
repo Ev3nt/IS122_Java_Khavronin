@@ -10,14 +10,20 @@ import java.net.http.HttpResponse;
 
 public class HttpSchedule implements WebSchedule {
     @Override
-    public String getSchedule(String group, Integer semester, Integer year) throws IOException, InterruptedException {
+    public String getSchedule(String group, Integer semester, Integer year)  {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://scala.mivlgu.ru/core/frontend/index.php?r=schedulecash/group&group=" + group + "&semester=" + semester + "&year=" + year + "&format=json"))
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = null;
 
-        return response.body();
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException | IOException e) {
+//            throw new RuntimeException(e);
+        }
+
+        return response != null ? response.body() : "";
     }
 }
