@@ -59,7 +59,7 @@ public class GroupSchedule implements ComboBoxItem {
         button.addActionListener(new ButtonListener());
     }
 
-    private void Process(String json) throws IOException, TemplateException, GroupException {
+    private void process(String json) throws IOException, TemplateException, GroupException {
         boolean showAllDays = showAllDaysCheck.isSelected();
 
         // ---------------------------------------------------------------
@@ -201,7 +201,7 @@ public class GroupSchedule implements ComboBoxItem {
 
                 ScheduleLoader loader = new ScheduleLoader(HttpSchedule::new);
                 String json = loader.getSchedule(group, semester, year);
-                Process(json);
+                process(json);
 
                 JOptionPane.showMessageDialog(null, "Расписание успешно составлено!", "Сообщение", JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException | TemplateException | GroupException e) {
