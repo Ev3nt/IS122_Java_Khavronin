@@ -7,6 +7,7 @@ import freemarker.template.TemplateException;
 import org.ev3nt.classes.CacheManager;
 import org.ev3nt.classes.ResourceLoader;
 import org.ev3nt.classes.ScheduleLoader;
+import org.ev3nt.classes.ZipCustomCopy;
 import org.ev3nt.gui.interfaces.ComboBoxItem;
 import org.ev3nt.web.classes.HttpSchedule;
 import org.ev3nt.web.classes.dto.LessonDTO;
@@ -62,9 +63,6 @@ public class GroupSchedule implements ComboBoxItem {
     private void process(String json) throws IOException, TemplateException, GroupException {
         boolean showAllDays = showAllDaysCheck.isSelected();
 
-        // ---------------------------------------------------------------
-        // TODO: rewrite
-
         ResourceLoader.extract(templatesPath.resolve("document.xml"));
         ResourceLoader.extract(templatesPath.resolve("Template.docx"));
 
@@ -111,30 +109,6 @@ public class GroupSchedule implements ComboBoxItem {
             lessonsSchedule.put(lessonNumber, rowLessons);
         }
 
-        try {
-            Files.createDirectory(Path.of("schedules"));
-        } catch (IOException e) {
-//            throw new RuntimeException(e);
-        }
-
-        ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(templatesPath.resolve("Template.docx").toString()));
-        ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream("schedules\\" + schedule.getGroup().getName() + ".docx"));
-
-        {
-            ZipEntry zipEntry;
-            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                if (zipEntry.getName().equalsIgnoreCase("word/document.xml")) {
-                    continue;
-                }
-
-                zipOutputStream.putNextEntry(zipEntry);
-
-                for (int c = zipInputStream.read(); c != -1; c = zipInputStream.read()) {
-                    zipOutputStream.write(c);
-                }
-            }
-        }
-
         Configuration cfg = new Configuration();
         cfg.setDirectoryForTemplateLoading(templatesPath.toFile());
         cfg.setAPIBuiltinEnabled(true);
@@ -154,15 +128,17 @@ public class GroupSchedule implements ComboBoxItem {
         StringWriter writer = new StringWriter();
         template.process(root, writer);
 
-        ZipEntry zipEntry = new ZipEntry("word\\document.xml");
-        zipOutputStream.putNextEntry(zipEntry);
-        zipOutputStream.write(writer.toString().getBytes());
+        try {
+            Files.createDirectory(Path.of("schedules"));
+        } catch (IOException e) {
+//            throw new RuntimeException(e);
+        }
 
-        zipInputStream.close();
-        zipOutputStream.close();
-        
-        //
-        //------------------------------------------------------
+        ZipCustomCopy zip = new ZipCustomCopy("schedules\\" + schedule.getGroup().getName() + ".docx", templatesPath.resolve("Template.docx").toString());
+
+        zip.add("word\\document.xml", writer.toString());
+
+        zip.close();
     }
 
     private static class GroupException extends Exception {
