@@ -4,6 +4,7 @@ import org.ev3nt.exceptions.ScheduleException;
 import org.ev3nt.web.interfaces.WebSchedule;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.function.Supplier;
 
 public class ScheduleLoader {
@@ -13,7 +14,7 @@ public class ScheduleLoader {
 
     public String getSchedule(String group, Integer semester, Integer year) throws ScheduleException {
         String json = webSchedule.getSchedule(group, semester, year);
-        Path cacheName = Path.of(String.format("%s_%d_%d", group, semester, year));
+        Path cacheName = Paths.get(String.format("%s_%d_%d", group, semester, year));
 
         if (json.isEmpty()) {
             json = CacheManager.getCachedDataAsString(cacheName);

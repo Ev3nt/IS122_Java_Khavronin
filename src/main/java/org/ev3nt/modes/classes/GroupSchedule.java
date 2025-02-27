@@ -18,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 
@@ -62,7 +63,7 @@ public class GroupSchedule implements ComboBoxItem {
         ResourceLoader.extract(templatesPath.resolve("Template.docx"));
 
         ObjectMapper mapper = new ObjectMapper();
-        var mappedJson = mapper.readValue(json, Map.class);
+        @SuppressWarnings("rawtypes") Map mappedJson = mapper.readValue(json, Map.class);
 
         if (!mappedJson.get("status").equals("ok")) {
             throw new GroupException(mappedJson.get("message").toString());
@@ -105,11 +106,11 @@ public class GroupSchedule implements ComboBoxItem {
         }
 
         Configuration cfg = new Configuration();
-        cfg.setDirectoryForTemplateLoading(templatesPath.toFile());
+        cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
         cfg.setAPIBuiltinEnabled(true);
         Template template = cfg.getTemplate("document.xml");
 
-        List<String> daysOfWeek = List.of("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
+        List<String> daysOfWeek = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
         if (!showAllDays) {
             daysOfWeek = daysOfWeek.subList(0, maxDays);
         }
@@ -124,14 +125,14 @@ public class GroupSchedule implements ComboBoxItem {
         template.process(root, writer);
 
         try {
-            Files.createDirectory(Path.of("schedules"));
+            Files.createDirectory(Paths.get("schedules"));
         } catch (IOException e) {
 //            throw new RuntimeException(e);
         }
 
-        ZipCustomCopy zip = new ZipCustomCopy("schedules\\" + schedule.getGroup().getName() + ".docx", templatesPath.resolve("Template.docx").toString());
+        ZipCustomCopy zip = new ZipCustomCopy("schedules/" + schedule.getGroup().getName() + ".docx", templatesPath.resolve("Template.docx").toString());
 
-        zip.add("word\\document.xml", writer.toString());
+        zip.add("word/document.xml", writer.toString());
 
         zip.close();
     }
@@ -190,5 +191,5 @@ public class GroupSchedule implements ComboBoxItem {
     JTextField yearField;
     JCheckBox showAllDaysCheck;
 
-    Path templatesPath = Path.of("templates\\GroupSchedule");
+    Path templatesPath = Paths.get("templates/GroupSchedule");
 }

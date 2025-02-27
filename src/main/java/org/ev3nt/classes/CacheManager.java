@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class CacheManager {
     public enum StreamType {
@@ -24,11 +25,11 @@ public class CacheManager {
             try {
                 Path fullName = cacheDir.resolve(name);
                 if (type == StreamType.INPUT) {
-                    if (fullName.toFile().exists()) {
-                        stream = new FileInputStream(fullName.toFile());
+                    if (fullName.toAbsolutePath().toFile().exists()) {
+                        stream = Files.newInputStream(fullName.toFile().toPath());
                     }
                 } else {
-                    stream = new FileOutputStream(fullName.toFile());
+                    stream = Files.newOutputStream(fullName.toFile().toPath());
                 }
             } catch (IOException e) {
 //            throw new RuntimeException(e);
@@ -41,7 +42,7 @@ public class CacheManager {
     static public String getCachedDataAsString(Path name) {
         StringBuilder builder = new StringBuilder();
 
-        FileInputStream stream = (FileInputStream)getCachedDataAsStream(name, StreamType.INPUT);
+        InputStream stream = (InputStream)getCachedDataAsStream(name, StreamType.INPUT);
         if (stream != null) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
             String line;
@@ -63,7 +64,7 @@ public class CacheManager {
     }
 
     static public void saveDataAsCache(Path name, String data) {
-        FileOutputStream stream = (FileOutputStream)getCachedDataAsStream(name, StreamType.OUTPUT);
+        OutputStream stream = (OutputStream)getCachedDataAsStream(name, StreamType.OUTPUT);
         if (stream != null && !data.isEmpty()) {
             try {
                 stream.write(data.getBytes(StandardCharsets.UTF_8));
@@ -87,6 +88,6 @@ public class CacheManager {
         }
     }
 
-    static Path cacheDir = Path.of("cache");
+    static Path cacheDir = Paths.get("cache");
     static Path lastCachedFileName = null;
 }
