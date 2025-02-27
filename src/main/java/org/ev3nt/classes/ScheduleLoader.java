@@ -1,5 +1,6 @@
 package org.ev3nt.classes;
 
+import org.ev3nt.exceptions.ScheduleException;
 import org.ev3nt.web.interfaces.WebSchedule;
 
 import java.nio.file.Path;

@@ -4,10 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.ev3nt.classes.CacheManager;
-import org.ev3nt.classes.ResourceLoader;
-import org.ev3nt.classes.ScheduleLoader;
-import org.ev3nt.classes.ZipCustomCopy;
+import org.ev3nt.classes.*;
+import org.ev3nt.exceptions.ScheduleException;
 import org.ev3nt.gui.interfaces.ComboBoxItem;
 import org.ev3nt.web.classes.HttpSchedule;
 import org.ev3nt.web.classes.dto.LessonDTO;
@@ -177,7 +175,7 @@ public class GroupSchedule implements ComboBoxItem {
                 process(json);
 
                 JOptionPane.showMessageDialog(null, "Расписание успешно составлено!", "Сообщение", JOptionPane.INFORMATION_MESSAGE);
-            } catch (IOException | TemplateException | GroupException e) {
+            } catch (IOException | TemplateException | GroupException | ScheduleException e) {
                 if (e.getClass() == GroupException.class) {
                     CacheManager.deleteLastCachedFile();
                 }

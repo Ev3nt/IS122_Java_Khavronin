@@ -23,8 +23,10 @@ public class CacheManager {
 
             try {
                 Path fullName = cacheDir.resolve(name);
-                if (type == StreamType.INPUT && fullName.toFile().exists()) {
-                    stream = new FileInputStream(fullName.toFile());
+                if (type == StreamType.INPUT) {
+                    if (fullName.toFile().exists()) {
+                        stream = new FileInputStream(fullName.toFile());
+                    }
                 } else {
                     stream = new FileOutputStream(fullName.toFile());
                 }
@@ -42,7 +44,7 @@ public class CacheManager {
         FileInputStream stream = (FileInputStream)getCachedDataAsStream(name, StreamType.INPUT);
         if (stream != null) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-            String line = null;
+            String line;
 
             try {
                 while ((line = reader.readLine()) != null) {
