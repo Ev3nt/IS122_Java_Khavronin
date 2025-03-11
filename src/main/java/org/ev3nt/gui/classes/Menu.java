@@ -19,6 +19,8 @@ public class Menu {
         menu.setLocationRelativeTo(null);
 
         comboBox = new JComboBox<>();
+        final Font f = comboBox.getFont();
+        comboBox.setFont(new Font(f.getName(), f.getStyle(), 18));
         comboBox.addActionListener(new ComboBoxListener());
         itemHashMap = new HashMap<>();
 

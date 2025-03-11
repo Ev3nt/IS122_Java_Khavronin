@@ -6,6 +6,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.ev3nt.classes.*;
 import org.ev3nt.exceptions.ScheduleException;
+import org.ev3nt.gui.classes.PlaceholderTextField;
 import org.ev3nt.gui.interfaces.ComboBoxItem;
 import org.ev3nt.web.classes.HttpSchedule;
 import org.ev3nt.web.classes.dto.LessonDTO;
@@ -32,25 +33,43 @@ public class GroupSchedule implements ComboBoxItem {
     public void showContent(JPanel contentPanel) {
         JPanel gridPanel = new JPanel(new GridLayout(4, 2));
 
-        groupField = new JTextField(5);
-        gridPanel.add(new JLabel("Группа:"));
+        final Font f = gridPanel.getFont();
+        JLabel label;
+
+        groupField = new PlaceholderTextField(5);
+        groupField.setPlaceholder("Пример: ИС-122");
+        groupField.setFont(new Font(f.getName(), f.getStyle(), 18));
+        label = new JLabel("Группа:");
+        label.setFont(new Font(f.getName(), f.getStyle(), 18));
+        gridPanel.add(label);
         gridPanel.add(groupField);
 
-        semesterField = new JTextField(5);
-        gridPanel.add(new JLabel("Семестр:"));
+        semesterField = new PlaceholderTextField(5);
+        semesterField.setPlaceholder("Пример: 2");
+        semesterField.setFont(new Font(f.getName(), f.getStyle(), 18));
+        label = new JLabel("Семестр:");
+        label.setFont(new Font(f.getName(), f.getStyle(), 18));
+        gridPanel.add(label);
         gridPanel.add(semesterField);
 
-        yearField = new JTextField(5);
-        gridPanel.add(new JLabel("Год:"));
+        yearField = new PlaceholderTextField(5);
+        yearField.setPlaceholder("Пример: 2024");
+        yearField.setFont(new Font(f.getName(), f.getStyle(), 18));
+        label = new JLabel("Год:");
+        label.setFont(new Font(f.getName(), f.getStyle(), 18));
+        gridPanel.add(label);
         gridPanel.add(yearField);
 
         showAllDaysCheck = new JCheckBox();
-        gridPanel.add(new JLabel("Показать все дни:"));
+        label = new JLabel("Показать все дни:");
+        label.setFont(new Font(f.getName(), f.getStyle(), 18));
+        gridPanel.add(label);
         gridPanel.add(showAllDaysCheck);
 
         contentPanel.add(gridPanel);
 
         JButton button = new JButton("Составить");
+        button.setFont(new Font(f.getName(), f.getStyle(), 18));
         contentPanel.add(button);
 
         button.addActionListener(new ButtonListener());
@@ -105,6 +124,7 @@ public class GroupSchedule implements ComboBoxItem {
             lessonsSchedule.put(lessonNumber, rowLessons);
         }
 
+        //noinspection deprecation
         Configuration cfg = new Configuration();
         cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
         cfg.setAPIBuiltinEnabled(true);
@@ -186,9 +206,9 @@ public class GroupSchedule implements ComboBoxItem {
         }
     }
 
-    JTextField groupField;
-    JTextField semesterField;
-    JTextField yearField;
+    PlaceholderTextField groupField;
+    PlaceholderTextField semesterField;
+    PlaceholderTextField yearField;
     JCheckBox showAllDaysCheck;
 
     Path templatesPath = Paths.get("templates/GroupSchedule");
