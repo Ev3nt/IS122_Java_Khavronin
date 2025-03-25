@@ -81,6 +81,8 @@ public class TeacherSchedule  implements ComboBoxItem {
 
         JButton buttonFindTeachers = new JButton("Найти преподавателя");
         JButton button = new JButton("Составить");
+        buttonFindTeachers.setFont(new Font(f.getName(), f.getStyle(), 18));
+        button.setFont(new Font(f.getName(), f.getStyle(), 18));
 
         buttonFindTeachers.addActionListener(new ButtonListener(this::fetchTeachers));
         button.addActionListener(new ButtonListener(this::process));
