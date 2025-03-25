@@ -12,9 +12,13 @@ public class ScheduleLoader {
         webSchedule = factory.get();
     }
 
-    public String getSchedule(String group, Integer semester, Integer year) throws ScheduleException {
+    public String getSchedule(String group, Integer semester, Integer year) {
+        return getSchedule(group, semester, year, null);
+    }
+
+    public String getSchedule(String group, Integer semester, Integer year, String name) throws ScheduleException {
         String json = webSchedule.getSchedule(group, semester, year);
-        Path cacheName = Paths.get(String.format("%s_%d_%d", group, semester, year));
+        Path cacheName = Paths.get(String.format("%s_%d_%d", name == null ? group : name, semester, year));
 
         if (json.isEmpty()) {
             json = CacheManager.getCachedDataAsString(cacheName);
