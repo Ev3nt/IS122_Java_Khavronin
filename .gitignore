@@ -38,6 +38,6 @@ build/
 .DS_Store
 
 ### Project ###
-schedules/
-cache/
-templates/
+/schedules/
+/cache/
+/templates/
