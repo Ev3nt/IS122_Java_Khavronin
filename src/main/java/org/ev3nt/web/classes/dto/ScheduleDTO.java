@@ -5,6 +5,7 @@ import java.util.Map;
 public class ScheduleDTO {
     private String status;
     private String time;
+    private TeacherDTO teacher;
     private GroupDTO group;
     private String semestr;
     private String year;
@@ -56,5 +57,13 @@ public class ScheduleDTO {
 
     public void setDisciplines(Map<Integer, Map<Integer, Map<String, LessonDTO[]>>> disciplines) {
         this.disciplines = disciplines;
+    }
+
+    public TeacherDTO getTeacher() {
+        return teacher;
+    }
+
+    public void setTeacher(TeacherDTO teacher) {
+        this.teacher = teacher;
     }
 }

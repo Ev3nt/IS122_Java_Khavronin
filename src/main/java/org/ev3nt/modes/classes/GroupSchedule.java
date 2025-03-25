@@ -72,13 +72,13 @@ public class GroupSchedule implements ComboBoxItem {
         button.setFont(new Font(f.getName(), f.getStyle(), 18));
         contentPanel.add(button);
 
-        button.addActionListener(new ButtonListener());
+        button.addActionListener(new ButtonListener(this::fetch_group));
     }
 
     private void process(String json) throws IOException, TemplateException, GroupException {
         boolean showAllDays = showAllDaysCheck.isSelected();
 
-        ResourceLoader.extract(templatesPath.resolve("document.xml"));
+        ResourceLoader.extract(scheduleTemplatePath.resolve("document.xml"));
         ResourceLoader.extract(templatesPath.resolve("Template.docx"));
 
         ObjectMapper mapper = new ObjectMapper();
@@ -126,7 +126,7 @@ public class GroupSchedule implements ComboBoxItem {
 
         //noinspection deprecation
         Configuration cfg = new Configuration();
-        cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
+        cfg.setDirectoryForTemplateLoading(scheduleTemplatePath.toAbsolutePath().toFile());
         cfg.setAPIBuiltinEnabled(true);
         Template template = cfg.getTemplate("document.xml");
 
@@ -163,46 +163,43 @@ public class GroupSchedule implements ComboBoxItem {
             }
     }
 
-    private class ButtonListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent event) {
-            String group = groupField.getText();
-            int semester = 0;
-            int year = 0;
-            String message = null;
+    private void fetch_group() {
+        String group = groupField.getText();
+        int semester = 0;
+        int year = 0;
+        String message = null;
 
-            if (group.isEmpty()) {
-                message = "Вы не выбрали группу!";
-            } else if (semesterField.getText().isEmpty()) {
-                message = "Вы не уазали семестр!";
-            } else if (yearField.getText().isEmpty()) {
-                message = "Вы не указали год!";
-            } else {
-                try {
-                    semester = Integer.parseInt(semesterField.getText());
-                    year = Integer.parseInt(yearField.getText());
-                } catch (NumberFormatException e) {
-                    message = "Неверный формат числа!";
-                }
-            }
-
+        if (group.isEmpty()) {
+            message = "Вы не выбрали группу!";
+        } else if (semesterField.getText().isEmpty()) {
+            message = "Вы не уазали семестр!";
+        } else if (yearField.getText().isEmpty()) {
+            message = "Вы не указали год!";
+        } else {
             try {
-                if (message != null) {
-                    throw new IOException(message);
-                }
-
-                ScheduleLoader loader = new ScheduleLoader(HttpSchedule::new);
-                String json = loader.getSchedule(group, semester, year);
-                process(json);
-
-                JOptionPane.showMessageDialog(null, "Расписание успешно составлено!", "Сообщение", JOptionPane.INFORMATION_MESSAGE);
-            } catch (IOException | TemplateException | GroupException | ScheduleException e) {
-                if (e.getClass() == GroupException.class) {
-                    CacheManager.deleteLastCachedFile();
-                }
-
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
+                semester = Integer.parseInt(semesterField.getText());
+                year = Integer.parseInt(yearField.getText());
+            } catch (NumberFormatException e) {
+                message = "Неверный формат числа!";
             }
+        }
+
+        try {
+            if (message != null) {
+                throw new IOException(message);
+            }
+
+            ScheduleLoader loader = new ScheduleLoader(HttpSchedule::new);
+            String json = loader.getSchedule(group, semester, year);
+            process(json);
+
+            JOptionPane.showMessageDialog(null, "Расписание успешно составлено!", "Сообщение", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException | TemplateException | GroupException | ScheduleException e) {
+            if (e.getClass() == GroupException.class) {
+                CacheManager.deleteLastCachedFile();
+            }
+
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -211,5 +208,6 @@ public class GroupSchedule implements ComboBoxItem {
     PlaceholderTextField yearField;
     JCheckBox showAllDaysCheck;
 
-    Path templatesPath = Paths.get("templates/GroupSchedule");
+    Path templatesPath = Paths.get("templates");
+    Path scheduleTemplatePath = templatesPath.resolve("GroupSchedule");
 }
