@@ -197,7 +197,7 @@ public class TeacherSchedule  implements ComboBoxItem {
                 throw new TeacherException(mappedJson.get("message").toString());
             }
 
-            ScheduleDTO schedule = mapper.readValue(json, ScheduleDTO.class);
+            ScheduleDTO schedule = ScheduleParser.parse(json);
             Map<Integer, Map<Integer, Map<String, LessonDTO[]>>> disciplines = schedule.getDisciplines();
 
             int maxDays = 0;

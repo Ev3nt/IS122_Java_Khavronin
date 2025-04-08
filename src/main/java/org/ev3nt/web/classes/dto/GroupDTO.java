@@ -2,6 +2,7 @@ package org.ev3nt.web.classes.dto;
 
 public class GroupDTO {
     private String name;
+    private String id;
 
     public String getName() {
         return name;
@@ -9,5 +10,13 @@ public class GroupDTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

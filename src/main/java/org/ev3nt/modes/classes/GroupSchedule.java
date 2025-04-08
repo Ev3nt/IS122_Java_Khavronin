@@ -1,5 +1,6 @@
 package org.ev3nt.modes.classes;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -86,7 +87,8 @@ public class GroupSchedule implements ComboBoxItem {
             throw new GroupException(mappedJson.get("message").toString());
         }
 
-        ScheduleDTO schedule = mapper.readValue(json, ScheduleDTO.class);
+        ScheduleDTO schedule = ScheduleParser.parse(json);
+
         Map<Integer, Map<Integer, Map<String, LessonDTO[]>>> disciplines = schedule.getDisciplines();
 
         int maxDays = 0;

@@ -1,5 +1,7 @@
 package org.ev3nt.web.classes.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Map;
 
 public class ScheduleDTO {
@@ -9,6 +11,8 @@ public class ScheduleDTO {
     private GroupDTO group;
     private String semestr;
     private String year;
+
+    @JsonIgnore
     private Map<Integer, Map<Integer, Map<String, LessonDTO[]>>> disciplines;
 
     public String getStatus() {
