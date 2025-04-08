@@ -1,8 +1,8 @@
 package org.ev3nt;
 
 import org.ev3nt.gui.classes.Menu;
-import org.ev3nt.modes.classes.AudienceSchedule;
 import org.ev3nt.modes.classes.GroupSchedule;
+import org.ev3nt.modes.classes.AudienceSchedule;
 import org.ev3nt.modes.classes.TeacherSchedule;
 
 import javax.swing.*;
@@ -22,11 +22,11 @@ public class Main {
         }
 
 
-        Menu menu = new Menu("Test Window", 430, 300);
+        Menu menu = new Menu("Расписание МИВлГУ", 430, 300);
         menu.run();
 
         menu.add(GroupSchedule::new);
-//        menu.add(AudienceSchedule::new);
+        menu.add(AudienceSchedule::new);
         menu.add(TeacherSchedule::new);
     }
 }
