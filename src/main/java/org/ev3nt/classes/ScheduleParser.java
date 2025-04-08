@@ -6,10 +6,8 @@ import org.ev3nt.web.classes.dto.LessonDTO;
 import org.ev3nt.web.classes.dto.ScheduleDTO;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ScheduleParser {
     static public ScheduleDTO parse(String json) throws JsonProcessingException {
@@ -27,7 +25,7 @@ public class ScheduleParser {
             if (daySchedule instanceof Map) {
                 ((Map<?, ?>) daySchedule).forEach((key, value) -> {
                     int lessonNumber = Integer.parseInt(key.toString());
-                    Map<String, LessonDTO[]> lessonsMap = parseLessons(mapper, lessonNumber, value);
+                    Map<String, LessonDTO[]> lessonsMap = parseLessons(mapper, value);
 
                     dayScheduleMap.put(lessonNumber, lessonsMap);
                 });
@@ -35,8 +33,8 @@ public class ScheduleParser {
                 int index = 0;
                 for (Object value : ((List<?>) daySchedule)) {
                     int lessonNumber = ++index;
-                    Map<String, LessonDTO[]> lessonsMap = parseLessons(mapper, lessonNumber, value);
-                    
+                    Map<String, LessonDTO[]> lessonsMap = parseLessons(mapper, value);
+
                     dayScheduleMap.put(lessonNumber, lessonsMap);
                 }
             }
@@ -49,7 +47,7 @@ public class ScheduleParser {
         return schedule;
     }
 
-    static private Map<String, LessonDTO[]> parseLessons(ObjectMapper mapper, int lessonNumber, Object lessons) {
+    static private Map<String, LessonDTO[]> parseLessons(ObjectMapper mapper, Object lessons) {
         Map<String, LessonDTO[]> lessonsMap = new HashMap<>();
 
         if (lessons instanceof Map) {

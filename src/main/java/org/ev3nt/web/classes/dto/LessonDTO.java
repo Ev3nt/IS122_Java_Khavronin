@@ -120,6 +120,7 @@ public class LessonDTO {
         this.under_group_2 = under_group_2;
     }
 
+    @SuppressWarnings("unused")
     public String getGroup_name() {
         return group_name;
     }

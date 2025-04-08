@@ -1,6 +1,5 @@
 package org.ev3nt.modes.classes;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -89,40 +88,9 @@ public class GroupSchedule implements ComboBoxItem {
 
         ScheduleDTO schedule = ScheduleParser.parse(json);
 
-        Map<Integer, Map<Integer, Map<String, LessonDTO[]>>> disciplines = schedule.getDisciplines();
+        Map<Integer, Map<Integer, List<LessonDTO>>> lessonsSchedule = schedule.getRawMappedDisciplines();
 
-        int maxDays = 0;
-        int maxLessons = 0;
-        for (Map.Entry<Integer, Map<Integer, Map<String, LessonDTO[]>>> dayEntry : disciplines.entrySet()) {
-            for (Map.Entry<Integer, Map<String, LessonDTO[]>> lessonEntry : dayEntry.getValue().entrySet()) {
-                maxLessons = Math.max(maxLessons, lessonEntry.getKey());
-            }
-
-            maxDays = Math.max(maxDays, dayEntry.getKey());
-        }
-
-        Map<Integer, Object> lessonsSchedule = new HashMap<>();
-
-        for (int lessonNumber = 1; lessonNumber <= maxLessons; lessonNumber++) {
-            Map<Integer, Object> rowLessons = new HashMap<>();
-
-            for (Map.Entry<Integer, Map<Integer, Map<String, LessonDTO[]>>> dayLessons : disciplines.entrySet()) {
-                Map<String, LessonDTO[]> lessons =  dayLessons.getValue().get(lessonNumber);
-                if (lessons == null) {
-                    continue;
-                }
-
-                ArrayList<LessonDTO> lessonsArray = new ArrayList<>();
-
-                for (Map.Entry<String, LessonDTO[]> lesson : lessons.entrySet()) {
-                    Collections.addAll(lessonsArray, lesson.getValue());
-                }
-
-                rowLessons.put(dayLessons.getKey(), lessonsArray);
-            }
-
-            lessonsSchedule.put(lessonNumber, rowLessons);
-        }
+        int maxDays = schedule.getMaxDays();
 
         //noinspection deprecation
         Configuration cfg = new Configuration();
