@@ -1,6 +1,6 @@
 package org.ev3nt;
 
-import org.ev3nt.gui.MainWindow;
+import org.ev3nt.gui.Window;
 import org.ev3nt.modes.AudienceSchedule;
 import org.ev3nt.modes.GroupSchedule;
 import org.ev3nt.modes.TeacherSchedule;
@@ -18,11 +18,12 @@ public class Main {
         UIManager.put("TabbedPane.font", defaultFont);
         UIManager.put("List.font", defaultFont);
 
-        MainWindow window = new MainWindow("Расписание", 800, 600, 0.3, true);
-        window.run();
+        Window window = new Window("Расписание", 900, 600, 0.3, false);
 
         window.add(GroupSchedule::new);
         window.add(TeacherSchedule::new);
         window.add(AudienceSchedule::new);
+
+        window.run();
     }
 }

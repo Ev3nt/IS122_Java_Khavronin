@@ -1,7 +1,12 @@
 package org.ev3nt.modes;
 
+import org.ev3nt.gui.Window;
+import org.ev3nt.web.HttpGroups;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.*;
+import java.util.List;
 
 public class GroupSchedule implements ScheduleMode{
     @Override
@@ -10,7 +15,7 @@ public class GroupSchedule implements ScheduleMode{
     }
 
     @Override
-    public JPanel getPanel() {
+    public JPanel getPanel(Window parent) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
@@ -21,8 +26,6 @@ public class GroupSchedule implements ScheduleMode{
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
 
-        facultyComboBox = new JComboBox<>();
-        groupComboBox = new JComboBox<>();
         JButton favourite = new JButton("+");
 
         gbc.gridx = 0;
@@ -57,22 +60,8 @@ public class GroupSchedule implements ScheduleMode{
 
         headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, headerPanel.getPreferredSize().height));
 
-        String[] groups = new String[13];
-        groups[0] = "ИС-122";
-        groups[1] = "ИС-123";
-        groups[2] = "ИС-124";
-        groups[3] = "ИС-125";
-        groups[4] = "ИС-126";
-        groups[5] = "ИС-127";
-        groups[6] = "ИС-128";
-        groups[7] = "ИС-129";
-        groups[8] = "ИС-130";
-        groups[9] = "ИС-131";
-        groups[10] = "ИС-132";
-        groups[11] = "ИС-133";
-        groups[12] = "ИС-134";
-
-        JList<String> favouriteList = new JList<>(groups);
+        DefaultListModel<String> model = new DefaultListModel<>();
+        JList<String> favouriteList = new JList<>(model);
         favouriteList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         JScrollPane scrollPane = new JScrollPane(favouriteList);
@@ -96,9 +85,69 @@ public class GroupSchedule implements ScheduleMode{
         panel.add(Box.createVerticalStrut(20));
         panel.add(buttonPanel);
 
+        facultyComboBox.addActionListener(e -> {
+            groupComboBox.removeAllItems();
+
+            List<String> groups = ((FacultyItem) Objects.requireNonNull(facultyComboBox.getSelectedItem())).groups;
+
+            for (String group : groups) {
+                groupComboBox.addItem(group);
+            }
+        });
+
+        favourite.addActionListener(e -> {
+            String group = (String)groupComboBox.getSelectedItem();
+
+            if (group != null) {
+                DefaultListModel<String> favouriteGroups = (DefaultListModel<String>)favouriteList.getModel();
+
+                if (!favouriteGroups.contains(group)) {
+                    favouriteGroups.addElement(group);
+
+                    favouriteList.repaint();
+                }
+            } else {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Группа не выбрана!",
+                        "Не удалось добавить группу",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
+
+        InitFields();
+
         return panel;
     }
 
-    JComboBox<String> facultyComboBox;
-    JComboBox<String> groupComboBox;
+    private void InitFields() {
+        Map<String, List<String>> groups = HttpGroups.getGroups();
+
+        if (groups == null) {
+            return;
+        }
+
+        for (String faculty : groups.keySet()) {
+            facultyComboBox.addItem(new FacultyItem(faculty.substring(0, 1).toUpperCase() + faculty.substring(1), groups.get(faculty)));
+        }
+    }
+
+    static class FacultyItem {
+        FacultyItem(String label, List<String> groups) {
+            this.label = label;
+            this.groups = groups;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+
+        String label;
+        List<String> groups;
+    }
+
+    JComboBox<FacultyItem> facultyComboBox = new JComboBox<>();
+    JComboBox<String> groupComboBox = new JComboBox<>();
 }
