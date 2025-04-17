@@ -13,8 +13,8 @@ public class Window {
     public Window(String title, int width, int height, double coefficient, boolean resizable) {
         window = new TwoPanelsWindow(coefficient);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        window.setLocationRelativeTo(null);
         window.setSize(width, height);
+        window.setLocationRelativeTo(null);
         window.setResizable(resizable);
         window.setTitle(title);
 
