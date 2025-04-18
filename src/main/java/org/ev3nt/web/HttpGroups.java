@@ -1,5 +1,10 @@
 package org.ev3nt.web;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.ev3nt.files.CacheManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,15 +16,14 @@ import java.util.List;
 import java.util.Map;
 
 public class HttpGroups {
-    static public Map<String, List<String>> getGroups() {
+    static private Map<String, List<String>> fetchGroups() {
         String url = "https://scala.mivlgu.ru/core/frontend/index.php?r=schedulecash";
         String xml = WebHttp.request(url);
-
-        if (xml == null) {
-            return null;
-        }
-
         Map<String, List<String>> groups = new HashMap<>();
+
+        if (xml.isEmpty()) {
+            return groups;
+        }
 
         Document doc = Jsoup.parse(xml);
         Element select = doc.selectFirst("select#searchschedule-faculty");
@@ -66,4 +70,36 @@ public class HttpGroups {
 
         return groups;
     }
+
+    static private Map<String, List<String>> getCachedGroups() throws JsonProcessingException {
+        String data = CacheManager.getCachedDataAsString(cacheName);
+
+        return new ObjectMapper().readValue(data, new TypeReference<Map<String, List<String>>>() {});
+    }
+
+    static private void cacheGroups(Map<String, List<String>> groups) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+        String data = mapper.writeValueAsString(groups);
+        CacheManager.saveDataAsCache(cacheName, data);
+    }
+
+    static public Map<String, List<String>> getGroups() {
+        Map<String, List<String>> groups = fetchGroups();
+
+        try {
+            if (groups.isEmpty()) {
+                groups = getCachedGroups();
+            } else {
+                cacheGroups(groups);
+            }
+        } catch (JsonProcessingException e) {
+//            throw new RuntimeException(e);
+        }
+
+        return groups;
+    }
+
+    static String cacheName = "groups";
 }

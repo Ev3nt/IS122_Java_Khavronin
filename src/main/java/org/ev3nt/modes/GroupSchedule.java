@@ -1,5 +1,6 @@
 package org.ev3nt.modes;
 
+import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.gui.Window;
 import org.ev3nt.web.HttpGroups;
 
@@ -61,7 +62,7 @@ public class GroupSchedule implements ScheduleMode{
         headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, headerPanel.getPreferredSize().height));
 
         DefaultListModel<String> model = new DefaultListModel<>();
-        JList<String> favouriteList = new JList<>(model);
+        favouriteList = new JList<>(model);
         favouriteList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         JScrollPane scrollPane = new JScrollPane(favouriteList);
@@ -104,6 +105,8 @@ public class GroupSchedule implements ScheduleMode{
                 if (!favouriteGroups.contains(group)) {
                     favouriteGroups.addElement(group);
 
+                    FavouriteManager.saveFavourites(favouriteKey, favouriteGroups);
+
                     favouriteList.repaint();
                 }
             } else {
@@ -111,7 +114,7 @@ public class GroupSchedule implements ScheduleMode{
                         null,
                         "Группа не выбрана!",
                         "Не удалось добавить группу",
-                        JOptionPane.ERROR_MESSAGE
+                        JOptionPane.WARNING_MESSAGE
                 );
             }
         });
@@ -123,13 +126,20 @@ public class GroupSchedule implements ScheduleMode{
 
     private void InitFields() {
         Map<String, List<String>> groups = HttpGroups.getGroups();
-
-        if (groups == null) {
-            return;
-        }
+        List<String> favouriteGroups = FavouriteManager.loadFavourites(favouriteKey);
 
         for (String faculty : groups.keySet()) {
             facultyComboBox.addItem(new FacultyItem(faculty.substring(0, 1).toUpperCase() + faculty.substring(1), groups.get(faculty)));
+        }
+
+        DefaultListModel<String> model = (DefaultListModel<String>)favouriteList.getModel();
+
+        if (!favouriteGroups.isEmpty()) {
+            for (String group : favouriteGroups) {
+                model.addElement(group);
+            }
+
+            favouriteList.repaint();
         }
     }
 
@@ -150,4 +160,7 @@ public class GroupSchedule implements ScheduleMode{
 
     JComboBox<FacultyItem> facultyComboBox = new JComboBox<>();
     JComboBox<String> groupComboBox = new JComboBox<>();
+    JList<String> favouriteList;
+
+    String favouriteKey = "Groups";
 }

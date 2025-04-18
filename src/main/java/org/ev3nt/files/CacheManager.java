@@ -1,10 +1,10 @@
-package org.ev3nt.legacy.classes;
+package org.ev3nt.files;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 
 public class CacheManager {
     public enum StreamType {
@@ -12,14 +12,14 @@ public class CacheManager {
         OUTPUT
     }
 
-    static public Object getCachedDataAsStream(Path name, StreamType type) {
+    static public Object getCachedDataAsStream(String name, StreamType type) {
         Object stream = null;
 
         if (name != null) {
             try {
                 Files.createDirectory(cacheDir);
             } catch (IOException e) {
-//           throw new RuntimeException(e);
+//                throw new RuntimeException(e);
             }
 
             try {
@@ -39,7 +39,7 @@ public class CacheManager {
         return stream;
     }
 
-    static public String getCachedDataAsString(Path name) {
+    static public String getCachedDataAsString(String name) {
         StringBuilder builder = new StringBuilder();
 
         InputStream stream = (InputStream)getCachedDataAsStream(name, StreamType.INPUT);
@@ -63,7 +63,7 @@ public class CacheManager {
         return builder.toString();
     }
 
-    static public void saveDataAsCache(Path name, String data) {
+    static public void saveDataAsCache(String name, String data) {
         OutputStream stream = (OutputStream)getCachedDataAsStream(name, StreamType.OUTPUT);
         if (stream != null && !data.isEmpty()) {
             try {
@@ -71,23 +71,12 @@ public class CacheManager {
 
                 stream.close();
 
-                lastCachedFileName = name;
+//                lastCachedFileName = name;
             } catch (IOException e) {
 //                throw new RuntimeException(e);
             }
         }
     }
 
-    static public void deleteLastCachedFile() {
-        try {
-            if (lastCachedFileName != null) {
-                Files.deleteIfExists(cacheDir.resolve(lastCachedFileName));
-            }
-        } catch (IOException e) {
-//            throw new RuntimeException(e);
-        }
-    }
-
     static Path cacheDir = Paths.get("cache");
-    static Path lastCachedFileName = null;
 }

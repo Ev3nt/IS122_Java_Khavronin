@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 public class WebHttp {
     static public String request(String requestUrl, String requestMethod) {
-        String response = null;
+        String response = "";
 
         try {
             URL url = new URL(requestUrl);
