@@ -32,48 +32,35 @@ public class WebSchedule {
         for (Map.Entry<?, ?> dayEntry : disciplines.entrySet()) {
             Integer day = obj2Int(dayEntry.getKey());
             Object dayObj = dayEntry.getValue();
-            List<LessonDTO> lessons = new ArrayList<>();
-
-            List<?> legacyDayLessons;
-            if (dayObj instanceof List) {
-                legacyDayLessons = (List<?>) dayObj;
-            } else {
-                Map<?, ?> mappedDay = (Map<?, ?>) dayObj;
-                legacyDayLessons = new ArrayList<>(mappedDay.values());
-            }
-
-            Map<Integer, List<LessonDTO>> dayLessons = new HashMap<>();
-
-            for (Object dayLessonsObj : legacyDayLessons) {
-                List<LessonDTO> lessonsTemp;
-
-                if (dayLessonsObj instanceof Map) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, List<?>> lessonsContainer = (Map<String, List<?>>) dayLessonsObj;
-
-                    lessonsTemp = lessonsContainer.values().stream()
-                            .flatMap(List::stream)
-                            .map(lesson -> mapper.convertValue(lesson, LessonDTO.class))
-                            .collect(Collectors.toList());
-                } else {
-                    List<?> lessonsContainer = (List<?>) dayLessonsObj;
-
-                    lessonsTemp = lessonsContainer.stream().map(lesson -> mapper.convertValue(lesson, LessonDTO.class))
-                            .collect(Collectors.toList());
-                }
-
-                lessons.addAll(lessonsTemp);
-            }
+            List<LessonDTO> lessons = extractLessons(dayObj);
 
             if (zaoch) {
                 processZaochLessons(schedule, lessons);
             } else {
-                processRegularLessons(dayLessons, lessons);
-                schedule.put(day, dayLessons);
+                processRegularLessons(schedule, day, lessons);
             }
         }
 
         return schedule;
+    }
+
+    static List<LessonDTO> extractLessons(Object dayObj) {
+        List<?> legacyDayLessons = dayObj instanceof List
+                ? (List<?>) dayObj
+                :  new ArrayList<>(((Map<?, ?>) dayObj).values());
+
+        return legacyDayLessons.stream()
+                .flatMap(dayLessonsObj -> {
+                    @SuppressWarnings("unchecked")
+                    List<?> lessonsContainer = dayLessonsObj instanceof Map
+                            ? ((Map<String, List<?>>) dayLessonsObj).values().stream()
+                            .flatMap(List::stream).collect(Collectors.toList())
+                            : (List<?>) dayLessonsObj;
+
+                    return lessonsContainer.stream();
+                })
+                .map(lesson -> mapper.convertValue(lesson, LessonDTO.class))
+                .collect(Collectors.toList());
     }
 
     static void processZaochLessons(Map<Integer, Map<Integer, List<LessonDTO>>> schedule, List<LessonDTO> lessons) {
@@ -94,17 +81,23 @@ public class WebSchedule {
         });
     }
 
-    static void processRegularLessons(Map<Integer, List<LessonDTO>> dayLessons, List<LessonDTO> lessons) {
+    static void processRegularLessons(Map<Integer, Map<Integer, List<LessonDTO>>> schedule, int day,
+                                      List<LessonDTO> lessons) {
+        Map<Integer, List<LessonDTO>> dayLessons = new HashMap<>();
+
         lessons.forEach(lesson -> {
             Integer number = obj2Int(lesson.getNumber_para());
 
             dayLessons.computeIfAbsent(number, k -> new ArrayList<>())
                     .add(lesson);
         });
+
+        schedule.put(day, dayLessons);
     }
 
     static void disciplinesActualizer(ScheduleDTO scheduleDTO, Map<?, ?> mappedJson) {
-        Map<Integer, Map<Integer, List<LessonDTO>>> disciplines = parseDisciplines((Map<?, ?>) mappedJson.get("disciplines"));
+        Map<Integer, Map<Integer, List<LessonDTO>>> disciplines
+                = parseDisciplines((Map<?, ?>) mappedJson.get("disciplines"));
 
         scheduleDTO.setDisciplines(disciplines);
     }
@@ -117,11 +110,13 @@ public class WebSchedule {
             switch (scheduleType) {
                 case GROUP:
                     String encodedId = URLEncoder.encode(id, StandardCharsets.UTF_8.toString());
-                    url = "https://scala.mivlgu.ru/core/frontend/index.php?r=schedulecash/group&group=" + encodedId + "&semester=" + semester + "&year=" + year + "&format=json";
+                    url = "https://scala.mivlgu.ru/core/frontend/index.php?r=schedulecash/group&group="
+                            + encodedId + "&semester=" + semester + "&year=" + year + "&format=json";
 
                     break;
                 case TEACHER:
-                    url = "https://scala.mivlgu.ru/core/frontend/index.php?r=schedulecash/teacher&teacher_id=" + id + "&semester=" + semester + "&year=" + year + "&format=json";
+                    url = "https://scala.mivlgu.ru/core/frontend/index.php?r=schedulecash/teacher&teacher_id="
+                            + id + "&semester=" + semester + "&year=" + year + "&format=json";
 
                     break;
             }
@@ -164,7 +159,8 @@ public class WebSchedule {
         return scheduleDTO;
     }
 
-    static private void cacheSchedule(String id, int semester, int year, ScheduleDTO schedule) throws JsonProcessingException {
+    static private void cacheSchedule(String id, int semester, int year, ScheduleDTO schedule)
+            throws JsonProcessingException {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         String cacheName = getCacheName(id, semester, year);
