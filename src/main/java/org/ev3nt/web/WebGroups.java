@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HttpGroups {
+public class WebGroups {
     static private Map<String, List<String>> fetchGroups() {
         String url = "https://scala.mivlgu.ru/core/frontend/index.php?r=schedulecash";
         String xml = WebHttp.request(url);
@@ -74,11 +74,10 @@ public class HttpGroups {
     static private Map<String, List<String>> getCachedGroups() throws JsonProcessingException {
         String data = CacheManager.getCachedDataAsString(cacheName);
 
-        return new ObjectMapper().readValue(data, new TypeReference<Map<String, List<String>>>() {});
+        return mapper.readValue(data, new TypeReference<Map<String, List<String>>>() {});
     }
 
     static private void cacheGroups(Map<String, List<String>> groups) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         String data = mapper.writeValueAsString(groups);
@@ -101,5 +100,6 @@ public class HttpGroups {
         return groups;
     }
 
+    static ObjectMapper mapper = new ObjectMapper();
     static String cacheName = "groups";
 }

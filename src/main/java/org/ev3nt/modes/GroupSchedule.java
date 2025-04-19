@@ -2,7 +2,9 @@ package org.ev3nt.modes;
 
 import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.gui.Window;
-import org.ev3nt.web.HttpGroups;
+import org.ev3nt.web.WebGroups;
+import org.ev3nt.web.WebSchedule;
+import org.ev3nt.web.dto.ScheduleDTO;
 
 import javax.swing.*;
 import java.awt.*;
@@ -119,13 +121,21 @@ public class GroupSchedule implements ScheduleMode{
             }
         });
 
+        singleSchedule.addActionListener(e -> {
+            ScheduleDTO group = WebSchedule.getGroupSchedule("ИСз-124", parent.getSemester(), parent.getYear());
+            System.out.println(group.getDisciplines());
+
+            group = WebSchedule.getTeacherSchedule(146, parent.getSemester(), parent.getYear());
+            System.out.println(group.getDisciplines());
+        });
+
         InitFields();
 
         return panel;
     }
 
     private void InitFields() {
-        Map<String, List<String>> groups = HttpGroups.getGroups();
+        Map<String, List<String>> groups = WebGroups.getGroups();
         List<String> favouriteGroups = FavouriteManager.loadFavourites(favouriteKey);
 
         for (String faculty : groups.keySet()) {
