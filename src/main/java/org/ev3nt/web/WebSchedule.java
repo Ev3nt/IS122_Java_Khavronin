@@ -66,57 +66,41 @@ public class WebSchedule {
             }
 
             if (zaoch) {
-                for (LessonDTO lesson : lessons) {
-                    Integer week = Stream.of(lesson.getNumber_week(),
-                                    lesson.getUnder_group_1(),
-                                    lesson.getUnder_group_2())
-                            .filter(s -> !s.isEmpty())
-                            .findFirst()
-                            .map(WebSchedule::obj2Int)
-                            .orElse(null);
-
-                    Integer number = obj2Int(lesson.getNumber_para());
-
-                    List<LessonDTO> lessonsTemp;
-
-                    if (schedule.containsKey(week)) {
-                        dayLessons = schedule.get(week);
-                    } else {
-                        dayLessons = new HashMap<>();
-                    }
-
-                    if (dayLessons.containsKey(number)) {
-                        lessonsTemp = dayLessons.get(number);
-                    } else {
-                        lessonsTemp = new ArrayList<>();
-                    }
-
-                    lessonsTemp.add(lesson);
-
-                    dayLessons.put(number, lessonsTemp);
-                    schedule.put(week, dayLessons);
-                }
+                processZaochLessons(schedule, lessons);
             } else {
-                for (LessonDTO lesson : lessons) {
-                    Integer number = obj2Int(lesson.getNumber_para());
-                    List<LessonDTO> lessonsTemp;
-
-                    if (dayLessons.containsKey(number)) {
-                        lessonsTemp = dayLessons.get(number);
-                    } else {
-                        lessonsTemp = new ArrayList<>();
-                    }
-
-                    lessonsTemp.add(lesson);
-
-                    dayLessons.put(number, lessonsTemp);
-                }
-
+                processRegularLessons(dayLessons, lessons);
                 schedule.put(day, dayLessons);
             }
         }
 
         return schedule;
+    }
+
+    static void processZaochLessons(Map<Integer, Map<Integer, List<LessonDTO>>> schedule, List<LessonDTO> lessons) {
+        lessons.forEach(lesson -> {
+            Integer week = Stream.of(lesson.getNumber_week(),
+                            lesson.getUnder_group_1(),
+                            lesson.getUnder_group_2())
+                    .filter(s -> !s.isEmpty())
+                    .findFirst()
+                    .map(WebSchedule::obj2Int)
+                    .orElse(null);
+
+            Integer number = obj2Int(lesson.getNumber_para());
+
+            schedule.computeIfAbsent(week, k -> new HashMap<>())
+                    .computeIfAbsent(number, k -> new ArrayList<>())
+                    .add(lesson);
+        });
+    }
+
+    static void processRegularLessons(Map<Integer, List<LessonDTO>> dayLessons, List<LessonDTO> lessons) {
+        lessons.forEach(lesson -> {
+            Integer number = obj2Int(lesson.getNumber_para());
+
+            dayLessons.computeIfAbsent(number, k -> new ArrayList<>())
+                    .add(lesson);
+        });
     }
 
     static void disciplinesActualizer(ScheduleDTO scheduleDTO, Map<?, ?> mappedJson) {
