@@ -13,6 +13,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class WebSchedule {
     public enum ScheduleType {
@@ -27,36 +28,92 @@ public class WebSchedule {
     static Map<Integer, Map<Integer, List<LessonDTO>>> parseDisciplines(Map<?, ?> disciplines) {
         Map<Integer, Map<Integer, List<LessonDTO>>> schedule = new HashMap<>();
 
+        boolean zaoch = disciplines.size() == 1;
         for (Map.Entry<?, ?> dayEntry : disciplines.entrySet()) {
             Integer day = obj2Int(dayEntry.getKey());
-            Map<?, ?> legacyDayLessons = (Map<?, ?>) dayEntry.getValue();
+            Object dayObj = dayEntry.getValue();
+            List<LessonDTO> lessons = new ArrayList<>();
+
+            List<?> legacyDayLessons;
+            if (dayObj instanceof List) {
+                legacyDayLessons = (List<?>) dayObj;
+            } else {
+                Map<?, ?> mappedDay = (Map<?, ?>) dayObj;
+                legacyDayLessons = new ArrayList<>(mappedDay.values());
+            }
+
             Map<Integer, List<LessonDTO>> dayLessons = new HashMap<>();
 
-            for (Map.Entry<?, ?> dayLessonsEntry : legacyDayLessons.entrySet()) {
-                Integer lessonNumber = obj2Int(dayLessonsEntry.getKey());
-                List<LessonDTO> lessons;
+            for (Object dayLessonsObj : legacyDayLessons) {
+                List<LessonDTO> lessonsTemp;
 
-                Object lessonsContainerObj = dayLessonsEntry.getValue();
-
-                if (lessonsContainerObj instanceof Map) {
+                if (dayLessonsObj instanceof Map) {
                     @SuppressWarnings("unchecked")
-                    Map<String, List<?>> lessonsContainer = (Map<String, List<?>>) lessonsContainerObj;
+                    Map<String, List<?>> lessonsContainer = (Map<String, List<?>>) dayLessonsObj;
 
-                    lessons = lessonsContainer.values().stream()
+                    lessonsTemp = lessonsContainer.values().stream()
                             .flatMap(List::stream)
                             .map(lesson -> mapper.convertValue(lesson, LessonDTO.class))
                             .collect(Collectors.toList());
                 } else {
-                    List<?> lessonsContainer = (List<?>) lessonsContainerObj;
+                    List<?> lessonsContainer = (List<?>) dayLessonsObj;
 
-                    lessons = lessonsContainer.stream().map(lesson -> mapper.convertValue(lesson, LessonDTO.class))
+                    lessonsTemp = lessonsContainer.stream().map(lesson -> mapper.convertValue(lesson, LessonDTO.class))
                             .collect(Collectors.toList());
                 }
 
-                dayLessons.put(lessonNumber, lessons);
+                lessons.addAll(lessonsTemp);
             }
 
-            schedule.put(day, dayLessons);
+            if (zaoch) {
+                for (LessonDTO lesson : lessons) {
+                    Integer week = Stream.of(lesson.getNumber_week(),
+                                    lesson.getUnder_group_1(),
+                                    lesson.getUnder_group_2())
+                            .filter(s -> !s.isEmpty())
+                            .findFirst()
+                            .map(WebSchedule::obj2Int)
+                            .orElse(null);
+
+                    Integer number = obj2Int(lesson.getNumber_para());
+
+                    List<LessonDTO> lessonsTemp;
+
+                    if (schedule.containsKey(week)) {
+                        dayLessons = schedule.get(week);
+                    } else {
+                        dayLessons = new HashMap<>();
+                    }
+
+                    if (dayLessons.containsKey(number)) {
+                        lessonsTemp = dayLessons.get(number);
+                    } else {
+                        lessonsTemp = new ArrayList<>();
+                    }
+
+                    lessonsTemp.add(lesson);
+
+                    dayLessons.put(number, lessonsTemp);
+                    schedule.put(week, dayLessons);
+                }
+            } else {
+                for (LessonDTO lesson : lessons) {
+                    Integer number = obj2Int(lesson.getNumber_para());
+                    List<LessonDTO> lessonsTemp;
+
+                    if (dayLessons.containsKey(number)) {
+                        lessonsTemp = dayLessons.get(number);
+                    } else {
+                        lessonsTemp = new ArrayList<>();
+                    }
+
+                    lessonsTemp.add(lesson);
+
+                    dayLessons.put(number, lessonsTemp);
+                }
+
+                schedule.put(day, dayLessons);
+            }
         }
 
         return schedule;
@@ -123,26 +180,10 @@ public class WebSchedule {
         return scheduleDTO;
     }
 
-    static private void cacheSchedule(ScheduleDTO schedule, ScheduleType scheduleType) throws JsonProcessingException {
+    static private void cacheSchedule(String id, int semester, int year, ScheduleDTO schedule) throws JsonProcessingException {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
-        String name = "";
-
-        switch (scheduleType) {
-            case GROUP:
-                name = schedule.getGroup().getName();
-
-                break;
-            case TEACHER:
-                name = schedule.getTeacher().getId();
-
-                break;
-        }
-
-        int semester = Integer.parseInt(schedule.getSemestr());
-        int year = Integer.parseInt(schedule.getYear());
-
-        String cacheName = getCacheName(name, semester, year);
+        String cacheName = getCacheName(id, semester, year);
         String data = mapper.writeValueAsString(schedule);
         CacheManager.saveDataAsCache(cacheName, data);
     }
@@ -155,7 +196,7 @@ public class WebSchedule {
             if (scheduleDTO.isEmpty()) {
                 scheduleDTO = getCachedSchedule(id, semester, year);
             } else {
-                cacheSchedule(scheduleDTO, scheduleType);
+                cacheSchedule(id, semester, year, scheduleDTO);
             }
         } catch (JsonProcessingException e) {
 //            throw new RuntimeException(e);

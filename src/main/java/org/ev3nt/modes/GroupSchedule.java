@@ -125,6 +125,14 @@ public class GroupSchedule implements ScheduleMode{
             ScheduleDTO group = WebSchedule.getGroupSchedule("ИСз-124", parent.getSemester(), parent.getYear());
             System.out.println(group.getDisciplines());
 
+            Map<String, List<String>> groups = WebGroups.getGroups();
+
+            for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
+                for (String groupName : entry.getValue()) {
+                    group = WebSchedule.getGroupSchedule(groupName, parent.getSemester(), parent.getYear());
+                }
+            }
+
             group = WebSchedule.getTeacherSchedule(146, parent.getSemester(), parent.getYear());
             System.out.println(group.getDisciplines());
         });
