@@ -30,17 +30,17 @@ public class Window {
         semesterComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         semesterComboBox.setMaximumSize(new Dimension(Short.MAX_VALUE, semesterComboBox.getPreferredSize().height));
 
-        weekTypeComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        weekTypeComboBox.setMaximumSize(new Dimension(Short.MAX_VALUE, weekTypeComboBox.getPreferredSize().height));
+//        weekTypeComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+//        weekTypeComboBox.setMaximumSize(new Dimension(Short.MAX_VALUE, weekTypeComboBox.getPreferredSize().height));
 
         leftPanel.add(new JLabel("Учебный год"));
         leftPanel.add(yearComboBox);
         leftPanel.add(Box.createVerticalStrut(10));
         leftPanel.add(new JLabel("Семестр"));
         leftPanel.add(semesterComboBox);
-        leftPanel.add(Box.createVerticalStrut(10));
-        leftPanel.add(new JLabel("Дни недели"));
-        leftPanel.add(weekTypeComboBox);
+//        leftPanel.add(Box.createVerticalStrut(10));
+//        leftPanel.add(new JLabel("Дни недели"));
+//        leftPanel.add(weekTypeComboBox);
 
         leftPanel.setBorder(BorderFactory.createEmptyBorder(15,15,15,10));
 
@@ -62,8 +62,8 @@ public class Window {
         semesterComboBox.addItem(new SemesterItem("Весенний", 2));
         semesterComboBox.addItem(new SemesterItem("Осенний", 1));
 
-        weekTypeComboBox.addItem(new WeekTypeItem("Все дни", true));
-        weekTypeComboBox.addItem(new WeekTypeItem("Только используемые", false));
+//        weekTypeComboBox.addItem(new WeekTypeItem("Все дни", true));
+//        weekTypeComboBox.addItem(new WeekTypeItem("Только используемые", false));
 
     }
 
@@ -81,9 +81,9 @@ public class Window {
         return ((SemesterItem) Objects.requireNonNull(semesterComboBox.getSelectedItem())).semester;
     }
     
-    public boolean getWeekType() {
-        return ((WeekTypeItem)Objects.requireNonNull(weekTypeComboBox.getSelectedItem())).fullWeek;
-    }
+//    public boolean getWeekType() {
+//        return ((WeekTypeItem)Objects.requireNonNull(weekTypeComboBox.getSelectedItem())).fullWeek;
+//    }
 
     public void run() {
         window.setVisible(true);
@@ -119,24 +119,24 @@ public class Window {
         int semester;
     }
 
-    static class WeekTypeItem {
-        WeekTypeItem(String label, boolean fullWeek) {
-            this.label = label;
-            this.fullWeek = fullWeek;
-        }
-
-        @Override
-        public String toString() {
-            return label;
-        }
-
-        String label;
-        boolean fullWeek;
-    }
+//    static class WeekTypeItem {
+//        WeekTypeItem(String label, boolean fullWeek) {
+//            this.label = label;
+//            this.fullWeek = fullWeek;
+//        }
+//
+//        @Override
+//        public String toString() {
+//            return label;
+//        }
+//
+//        String label;
+//        boolean fullWeek;
+//    }
 
     TwoPanelsWindow window;
     JComboBox<YearItem> yearComboBox = new JComboBox<>();
     JComboBox<SemesterItem> semesterComboBox = new JComboBox<>();
-    JComboBox<WeekTypeItem> weekTypeComboBox = new JComboBox<>();
+//    JComboBox<WeekTypeItem> weekTypeComboBox = new JComboBox<>();
     JTabbedPane tabbedPane = new JTabbedPane();
 }

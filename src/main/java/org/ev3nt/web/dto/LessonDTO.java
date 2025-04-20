@@ -1,5 +1,7 @@
 package org.ev3nt.web.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class LessonDTO {
     private String id_day;
     private String number_para;
@@ -15,6 +17,9 @@ public class LessonDTO {
     private String under_group_1;
     private String under_group_2;
     private String group_name;
+
+    @JsonIgnore
+    private String plain_text;
 
     public String getId_day() {
         return id_day;
@@ -127,5 +132,13 @@ public class LessonDTO {
 
     public void setGroup_name(String group_name) {
         this.group_name = group_name;
+    }
+
+    public void setPlainText(String plain_text) {
+        this.plain_text = plain_text;
+    }
+
+    public String getPlainText() {
+        return plain_text;
     }
 }

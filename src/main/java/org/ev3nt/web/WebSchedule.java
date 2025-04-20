@@ -168,7 +168,7 @@ public class WebSchedule {
         CacheManager.saveDataAsCache(cacheName, data);
     }
 
-    static public ScheduleDTO getSchedule(String id, int semester, int year, ScheduleType scheduleType) {
+    static private ScheduleDTO getSchedule(String id, int semester, int year, ScheduleType scheduleType) {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         ScheduleDTO scheduleDTO = fetchSchedule(id, semester, year, scheduleType);

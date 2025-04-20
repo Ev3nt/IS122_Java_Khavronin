@@ -12,12 +12,10 @@ public class ScheduleDTO {
     private GroupDTO group;
     private String semestr;
     private String year;
+    private String message;
 
     @JsonIgnore
     private Map<Integer, Map<Integer, List<LessonDTO>>> disciplines;
-
-    @JsonIgnore
-    private String message;
 
     public String getStatus() {
         return status;
@@ -83,6 +81,20 @@ public class ScheduleDTO {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public int getMinLessonNumber() {
+        return disciplines.values().stream()
+                .flatMapToInt(discipline -> discipline.keySet().stream().mapToInt(Integer::intValue))
+                .min()
+                .orElse(0);
+    }
+
+    public int getMaxLessonNumber() {
+        return disciplines.values().stream()
+                .flatMapToInt(discipline -> discipline.keySet().stream().mapToInt(Integer::intValue))
+                .max()
+                .orElse(0);
     }
 
     @JsonIgnore
