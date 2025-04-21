@@ -44,7 +44,10 @@ public class GroupSchedule implements ScheduleMode{
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
 
+
         JButton favourite = new JButton("+");
+        Dimension buttonSize = new Dimension(favourite.getPreferredSize().width, favourite.getPreferredSize().height);
+        favourite.setPreferredSize(buttonSize);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -73,8 +76,15 @@ public class GroupSchedule implements ScheduleMode{
         JPanel favouritePanel = new JPanel();
         favouritePanel.setLayout(new BoxLayout(favouritePanel, BoxLayout.Y_AXIS));
 
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        headerPanel.add(new JLabel("Избранные группы"));
+        JButton unFavourite = new JButton("–"); // "–" or "-"
+        JPanel unFavouriteButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        unFavourite.setPreferredSize(buttonSize);
+        unFavouriteButtonPanel.add(unFavourite);
+
+        JPanel headerPanel = new JPanel(new BorderLayout());
+
+        headerPanel.add(new JLabel("Избранные группы"), BorderLayout.WEST);
+        headerPanel.add(unFavouriteButtonPanel, BorderLayout.EAST);
 
         headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, headerPanel.getPreferredSize().height));
 
@@ -133,6 +143,29 @@ public class GroupSchedule implements ScheduleMode{
                         null,
                         "Группа не выбрана!",
                         "Не удалось добавить группу",
+                        JOptionPane.WARNING_MESSAGE
+                );
+            }
+        });
+
+        unFavourite.addActionListener(e -> {
+            List<String> groups = favouriteList.getSelectedValuesList();
+
+            if (!groups.isEmpty()) {
+                DefaultListModel<String> favouriteGroups = (DefaultListModel<String>)favouriteList.getModel();
+
+                for (String group : groups) {
+                    favouriteGroups.removeElement(group);
+                }
+
+                FavouriteManager.saveFavourites(favouriteKey, favouriteGroups);
+
+                favouriteList.repaint();
+            } else {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Не выбрано ни одной группы для удаления.\nПожалуйста, выделите нужные группы в списке.",
+                        "Не удалось удалить группы",
                         JOptionPane.WARNING_MESSAGE
                 );
             }
