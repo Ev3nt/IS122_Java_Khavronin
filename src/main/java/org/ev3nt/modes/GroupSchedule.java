@@ -141,7 +141,7 @@ public class GroupSchedule implements ScheduleMode{
             } else {
                 JOptionPane.showMessageDialog(
                         null,
-                        "Группа не выбрана!",
+                        "Группа не выбрана!\nПожалуйста, выберите группу в выпадающем списке.",
                         "Не удалось добавить группу",
                         JOptionPane.WARNING_MESSAGE
                 );
@@ -164,7 +164,7 @@ public class GroupSchedule implements ScheduleMode{
             } else {
                 JOptionPane.showMessageDialog(
                         null,
-                        "Не выбрано ни одной группы для удаления.\nПожалуйста, выделите нужные группы в списке.",
+                        "Не выбрано ни одной группы для удаления!\nПожалуйста, выделите нужные группы в списке.",
                         "Не удалось удалить группы",
                         JOptionPane.WARNING_MESSAGE
                 );
@@ -177,7 +177,7 @@ public class GroupSchedule implements ScheduleMode{
             if (selectedGroups.isEmpty()) {
                 JOptionPane.showMessageDialog(
                         null,
-                        "Ни одна группа не выбрана!",
+                        "Ни одна группа не выбрана!\nПожалуйста, выделите нужные группы в списке.",
                         "Не удалось создать расписание",
                         JOptionPane.WARNING_MESSAGE
                 );
