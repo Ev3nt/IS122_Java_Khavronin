@@ -40,9 +40,6 @@
             <w:tr>
 <!--                Day/Week Column-->
                 <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:w="702" w:type="dxa"/>
-                    </w:tcPr>
                     <w:p>
                         <w:pPr>
                             <w:jc w:val="center"/>
@@ -76,6 +73,7 @@
                 </#list>
             </w:tr>
             <#list schedule.schedule as key, lessons>
+            <#assign row_name = schedule.row_names[key - 1]>
             <w:tr>
                 <w:trPr>
                     <w:trHeight w:val="567"/>
@@ -83,10 +81,13 @@
 <!--                Day/Week Column-->
                 <w:tc>
                     <w:tcPr>
-                        <w:tcW w:w="702" w:type="dxa"/>
+                        <w:tcW w:w="<#if row_name?length == 2>702<#else>1271</#if>" w:type="dxa"/>
                     </w:tcPr>
                     <w:p>
                         <w:pPr>
+                            <#if row_name?length != 2>
+                            <w:jc w:val="center"/>
+                            </#if>
                             <w:rPr>
                                 <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>
                                 <w:b/>
@@ -101,7 +102,7 @@
                                 <w:sz w:val="20"/>
                                 <w:szCs w:val="20"/>
                             </w:rPr>
-                            <w:t>${schedule.row_names[key - 1]}</w:t>
+                            <w:t>${row_name}</w:t>
                         </w:r>
                     </w:p>
                 </w:tc>

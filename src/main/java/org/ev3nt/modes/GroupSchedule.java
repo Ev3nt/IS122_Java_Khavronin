@@ -19,6 +19,10 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.List;
 
@@ -221,12 +225,12 @@ public class GroupSchedule implements ScheduleMode{
     }
 
     private void appendIfNotNull(StringBuilder builder, String value) {
-        if (value != null) {
+        if (value != null && !value.isEmpty()) {
             if (builder.length() > 0) {
                 builder.append(" ");
             }
 
-            builder.append(value);
+            builder.append(value.trim());
         }
     }
 
@@ -273,14 +277,30 @@ public class GroupSchedule implements ScheduleMode{
                             preparePlainText(lesson)
                     ));
 
-            List<String> daysOfWeek = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
+            List<String> rowNames;
+            if (groupName.contains("з-")) {
+                boolean isSpring = semester == 2;
+                int month = isSpring ? 2 : 9;
+                int day = isSpring ? 8 : 1;
+                LocalDate saturday = LocalDate.of(isSpring ? year + 1 : year, month, day)
+                        .with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+
+                rowNames = new ArrayList<>();
+                for (int i = 0; i < 18; i++) {
+                    rowNames.add(saturday.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + " (неделя " + (i + 1) + ")");
+
+                    saturday = saturday.plusWeeks(1);
+                }
+            } else {
+                rowNames = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
+            }
 
             Map<String, Object> group = new HashMap<>();
             group.put("title", schedule.getGroup().getName());
             group.put("first_lesson_number", schedule.getMinLessonNumber());
             group.put("last_lesson_number", schedule.getMaxLessonNumber());
             group.put("schedule", disciplines);
-            group.put("row_names", daysOfWeek);
+            group.put("row_names", rowNames);
 
             groupList.add(group);
         }
