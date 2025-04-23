@@ -1,6 +1,7 @@
 package org.ev3nt.files;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,8 +17,8 @@ public class ZipCustomCopy implements AutoCloseable {
 
         contentMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        inputStream = new ZipInputStream(Files.newInputStream(Paths.get(source)));
-        outputStream = new ZipOutputStream(Files.newOutputStream(Paths.get(destination)));
+        inputStream = new ZipInputStream(Files.newInputStream(Paths.get(source)), StandardCharsets.UTF_8);
+        outputStream = new ZipOutputStream(Files.newOutputStream(Paths.get(destination)), StandardCharsets.UTF_8);
     }
 
     @Override
@@ -57,7 +58,7 @@ public class ZipCustomCopy implements AutoCloseable {
     }
 
     public void add(String name, String data) {
-        add(name, data.getBytes());
+        add(name, data.getBytes(StandardCharsets.UTF_8));
     }
 
     private final ZipInputStream inputStream;

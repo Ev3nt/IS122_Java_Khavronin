@@ -221,7 +221,7 @@ public class TeacherSchedule implements ScheduleMode{
                         "Успех",
                         JOptionPane.INFORMATION_MESSAGE
                 );
-            } catch (IOException | TemplateException ex) {
+            } catch (IOException | TemplateException | RuntimeException ex) {
                 JOptionPane.showMessageDialog(
                         null,
                         ex.getMessage(),
@@ -366,7 +366,7 @@ public class TeacherSchedule implements ScheduleMode{
     }
 
     void process(List<TeacherItem> teachers, int semester, int year, boolean combined)
-            throws IOException, TemplateException {
+            throws IOException, TemplateException, RuntimeException {
 
         ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
         ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());

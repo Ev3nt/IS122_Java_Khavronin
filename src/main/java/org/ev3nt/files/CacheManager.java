@@ -42,7 +42,7 @@ public class CacheManager {
 
         InputStream stream = (InputStream)getCachedDataAsStream(name, StreamType.INPUT);
         if (stream != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
             String line;
 
             try {

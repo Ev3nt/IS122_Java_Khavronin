@@ -13,9 +13,10 @@ public class WebHttp {
             URL url = new URL(requestUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(requestMethod);
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                response = new Scanner(connection.getInputStream()).useDelimiter("\\A").next();
+                response = new Scanner(connection.getInputStream(), "UTF-8").useDelimiter("\\A").next();
             }
         } catch (IOException ignored) {}
 

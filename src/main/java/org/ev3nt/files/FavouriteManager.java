@@ -45,9 +45,11 @@ public class FavouriteManager {
         try {
             Map<String, List<E>> map = mapper.readValue(data, new TypeReference<Map<String, List<E>>>() { });
             List<E> favouriteList = map.get(key);
-            favourites = favouriteList.stream()
-                    .map(item -> mapper.convertValue(item, valueType))
-                    .collect(Collectors.toList());
+            if (favouriteList != null) {
+                favourites = favouriteList.stream()
+                        .map(item -> mapper.convertValue(item, valueType))
+                        .collect(Collectors.toList());
+            }
         } catch (JsonProcessingException ignored) {}
 
         return favourites;

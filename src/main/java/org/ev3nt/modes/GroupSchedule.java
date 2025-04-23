@@ -198,7 +198,7 @@ public class GroupSchedule implements ScheduleMode{
                         "Успех",
                         JOptionPane.INFORMATION_MESSAGE
                 );
-            } catch (IOException | TemplateException ex) {
+            } catch (IOException | TemplateException | RuntimeException ex) {
                 JOptionPane.showMessageDialog(
                         null,
                         ex.getMessage(),
@@ -325,7 +325,7 @@ public class GroupSchedule implements ScheduleMode{
     }
 
     void process(List<String> groups, int semester, int year, boolean combined)
-            throws IOException, TemplateException {
+            throws IOException, TemplateException, RuntimeException {
 
         ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
         ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
