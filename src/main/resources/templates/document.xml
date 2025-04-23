@@ -111,6 +111,7 @@
                 <w:tc>
                     <w:tcPr>
                         <w:vAlign w:val="center"/>
+                        <w:tcW w:w="<#if row_name?length == 2>${((15871 - 702) / schedule.columns?size)?round?c}<#else>${((15871 - 1271) / schedule.columns?size)?round?c}</#if>" w:type="dxa"/>
                     </w:tcPr>
 
                     <#macro blank>
