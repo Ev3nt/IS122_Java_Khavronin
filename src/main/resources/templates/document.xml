@@ -35,26 +35,26 @@
             <w:tblPr>
                 <w:tblStyle w:val="a3"/>
                 <w:tblW w:w="15871" w:type="dxa"/>
+                <w:tblLayout w:type="fixed"/>
 <!--                <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>-->
             </w:tblPr>
             <w:tr>
+                <#assign row_name = schedule.row_names[0]>
 <!--                Day/Week Column-->
                 <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="<#if row_name?length == 2>702<#else>1271</#if>" w:type="dxa"/>
+                    </w:tcPr>
                     <w:p>
-                        <w:pPr>
-                            <w:jc w:val="center"/>
-                            <w:rPr>
-                                <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>
-                                <w:b/>
-                                <w:sz w:val="20"/>
-                                <w:szCs w:val="20"/>
-                            </w:rPr>
-                        </w:pPr>
+
                     </w:p>
                 </w:tc>
 <!--                Pair Numbers-->
                 <#list schedule.columns as number>
                 <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="<#if row_name?length == 2>${((15871 - 702) / schedule.columns?size)?round?c}<#else>${((15871 - 1271) / schedule.columns?size)?round?c}</#if>" w:type="dxa"/>
+                    </w:tcPr>
                     <w:p>
                         <w:pPr>
                             <w:jc w:val="center"/>
