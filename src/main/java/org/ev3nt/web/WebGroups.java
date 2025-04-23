@@ -71,13 +71,17 @@ public class WebGroups {
         return groups;
     }
 
-    static private Map<String, List<String>> getCachedGroups() throws JsonProcessingException {
+    static private Map<String, List<String>> getCachedGroups()
+            throws JsonProcessingException {
+
         String data = CacheManager.getCachedDataAsString(cacheName);
 
         return mapper.readValue(data, new TypeReference<Map<String, List<String>>>() {});
     }
 
-    static private void cacheGroups(Map<String, List<String>> groups) throws JsonProcessingException {
+    static private void cacheGroups(Map<String, List<String>> groups)
+            throws JsonProcessingException {
+
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         String data = mapper.writeValueAsString(groups);
@@ -89,6 +93,9 @@ public class WebGroups {
 
         try {
             groups = getCachedGroups();
+        } catch (JsonProcessingException ignored) {}
+
+        try {
             if (groups.isEmpty()) {
                 groups = fetchGroups();
 
@@ -96,9 +103,7 @@ public class WebGroups {
                     cacheGroups(groups);
                 }
             }
-        } catch (JsonProcessingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (JsonProcessingException ignored) {}
 
         return groups;
     }

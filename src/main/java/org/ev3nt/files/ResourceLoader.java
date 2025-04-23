@@ -44,10 +44,7 @@ public class ResourceLoader {
             Files.createDirectories(destinationPath.getParent());
 
             Files.copy(ResourceLoader.getResourceAsStream(name), destinationPath);
-        } catch (IOException e) {
-//            throw new RuntimeException(e);
-        }
-
+        } catch (IOException ignored) {}
     }
 
     static public void extract(String name) {

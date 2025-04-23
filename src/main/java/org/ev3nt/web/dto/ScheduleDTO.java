@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class ScheduleDTO {
     private String status;
@@ -70,10 +70,12 @@ public class ScheduleDTO {
         this.disciplines = disciplines;
     }
 
+    @SuppressWarnings("unused")
     public TeacherDTO getTeacher() {
         return teacher;
     }
 
+    @SuppressWarnings("unused")
     public void setTeacher(TeacherDTO teacher) {
         this.teacher = teacher;
     }
@@ -96,10 +98,16 @@ public class ScheduleDTO {
     }
 
     public List<Integer> getPairNumbers() {
-        return disciplines.values().stream()
+        List<Integer> pairNumbers = disciplines.values().stream()
                 .flatMap(innerMap -> innerMap.keySet().stream())
                 .distinct()
-                .sorted()
+                .collect(Collectors.toList());
+
+        int min = pairNumbers.stream().min(Integer::compareTo).orElse(0);
+        int max = pairNumbers.stream().max(Integer::compareTo).orElse(0);
+
+        return IntStream.rangeClosed(min, max)
+                .boxed()
                 .collect(Collectors.toList());
     }
 

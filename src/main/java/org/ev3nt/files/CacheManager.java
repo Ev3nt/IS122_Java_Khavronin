@@ -31,9 +31,7 @@ public class CacheManager {
                 } else {
                     stream = Files.newOutputStream(fullName.toFile().toPath());
                 }
-            } catch (IOException e) {
-//            throw new RuntimeException(e);
-            }
+            } catch (IOException ignored) {}
         }
 
         return stream;
@@ -55,9 +53,7 @@ public class CacheManager {
 
                 reader.close();
                 stream.close();
-            } catch (IOException e) {
-//              throw new RuntimeException(e);
-            }
+            } catch (IOException ignored) {}
         }
 
         return builder.toString();
@@ -72,9 +68,7 @@ public class CacheManager {
                 stream.close();
 
 //                lastCachedFileName = name;
-            } catch (IOException e) {
-//                throw new RuntimeException(e);
-            }
+            } catch (IOException ignored) {}
         }
     }
 

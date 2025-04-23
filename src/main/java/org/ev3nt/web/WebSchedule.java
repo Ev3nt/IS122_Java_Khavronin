@@ -134,9 +134,7 @@ public class WebSchedule {
                 scheduleDTO.setStatus(status);
                 scheduleDTO.setMessage(message);
             }
-        } catch (UnsupportedEncodingException | JsonProcessingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (UnsupportedEncodingException | JsonProcessingException ignored) {}
 
         return scheduleDTO;
     }
@@ -145,7 +143,9 @@ public class WebSchedule {
         return id + "_" + semester + "_" + year;
     }
 
-    static private ScheduleDTO getCachedSchedule(String id, int semester, int year) throws JsonProcessingException {
+    static private ScheduleDTO getCachedSchedule(String id, int semester, int year)
+            throws JsonProcessingException {
+
         String cacheName = getCacheName(id, semester, year);
         String data = CacheManager.getCachedDataAsString(cacheName);
 
@@ -161,6 +161,7 @@ public class WebSchedule {
 
     static private void cacheSchedule(String id, int semester, int year, ScheduleDTO schedule)
             throws JsonProcessingException {
+
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         String cacheName = getCacheName(id, semester, year);
@@ -178,9 +179,7 @@ public class WebSchedule {
             } else {
                 cacheSchedule(id, semester, year, scheduleDTO);
             }
-        } catch (JsonProcessingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (JsonProcessingException ignored) {}
 
         return scheduleDTO;
     }

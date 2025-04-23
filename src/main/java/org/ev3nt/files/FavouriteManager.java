@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -26,9 +25,7 @@ public class FavouriteManager {
         String data = CacheManager.getCachedDataAsString(cacheName);
         try {
             map = mapper.readValue(data, new TypeReference<Map<String, List<E>>>() { });
-        } catch (JsonProcessingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (JsonProcessingException ignored) {}
 
         map.put(key, favouriteList);
 
@@ -38,9 +35,7 @@ public class FavouriteManager {
 
             data = mapper.writerWithDefaultPrettyPrinter().with(prettyPrinter).writeValueAsString(map);
             CacheManager.saveDataAsCache(cacheName, data);
-        } catch (JsonProcessingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (JsonProcessingException ignored) {}
     }
 
     static public <E> List<E> loadFavourites(String key, Class<E> valueType) {
@@ -53,9 +48,7 @@ public class FavouriteManager {
             favourites = favouriteList.stream()
                     .map(item -> mapper.convertValue(item, valueType))
                     .collect(Collectors.toList());
-        } catch (JsonProcessingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (JsonProcessingException ignored) {}
 
         return favourites;
     }

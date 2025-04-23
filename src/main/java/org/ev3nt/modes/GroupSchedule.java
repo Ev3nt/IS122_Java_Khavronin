@@ -26,6 +26,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.ev3nt.utils.StringUtils.appendIfNotNull;
 
@@ -50,7 +52,6 @@ public class GroupSchedule implements ScheduleMode{
 
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
-
 
         JButton favourite = new JButton("+");
         Dimension buttonSize = new Dimension(favourite.getPreferredSize().width, favourite.getPreferredSize().height);
@@ -108,12 +109,8 @@ public class GroupSchedule implements ScheduleMode{
         buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, buttonPanel.getPreferredSize().height));
 
-//        JButton singleSchedule = new JButton("Индивидуальное расписание");
-//        JButton multiSchedule = new JButton("Общее расписание");
         JButton createSchedule = new JButton("Создать расписание");
 
-//        buttonPanel.add(singleSchedule);
-//        buttonPanel.add(multiSchedule);
         buttonPanel.add(createSchedule);
 
         panel.add(groupPanel);
@@ -193,7 +190,7 @@ public class GroupSchedule implements ScheduleMode{
             }
 
             try {
-                process(selectedGroups, parent.getSemester(), parent.getYear());
+                process(selectedGroups, parent.getSemester(), parent.getYear(), parent.getScheduleFormat());
 
                 JOptionPane.showMessageDialog(
                         null,
@@ -208,7 +205,6 @@ public class GroupSchedule implements ScheduleMode{
                         "Не удалось создать расписание",
                         JOptionPane.ERROR_MESSAGE
                 );
-//                throw new RuntimeException(ex);
             }
         });
 
@@ -268,14 +264,8 @@ public class GroupSchedule implements ScheduleMode{
         return text.toString();
     }
 
-    void process(List<String> groups, int semester, int year) throws IOException, TemplateException {
-        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
-        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
-
-        Configuration cfg = new Configuration();
-        cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
-
-        Template template = cfg.getTemplate("document.xml");
+    void createSchedule(Template template, List<String> groups, int semester, int year)
+            throws IOException, TemplateException {
 
         Map<String, Object> root = new HashMap<>();
         List<Map<String, Object>> groupList = new ArrayList<>();
@@ -290,29 +280,13 @@ public class GroupSchedule implements ScheduleMode{
 
             schedule.prepareDisciplines(this::preparePlainText);
 
-            List<Integer> pairNumbers = schedule.getPairNumbers();
-
-            List<String> rowNames;
-            if (groupName.contains("з-")) {
-                boolean isSpring = semester == 2;
-                int month = isSpring ? 2 : 9;
-                int day = isSpring ? 8 : 1;
-                LocalDate saturday = LocalDate.of(isSpring ? year + 1 : year, month, day)
-                        .with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
-
-                rowNames = new ArrayList<>();
-                for (int i = 0; i < 18; i++) {
-                    rowNames.add(saturday.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + " (неделя " + (i + 1) + ")");
-
-                    saturday = saturday.plusWeeks(1);
-                }
-            } else {
-                rowNames = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
-            }
+            List<String> rowNames = groupName.contains("з-")
+                    ? generateWeekDates(semester, year)
+                    : Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
 
             Map<String, Object> group = new HashMap<>();
             group.put("title", schedule.getGroup().getName());
-            group.put("columns", pairNumbers);
+            group.put("columns", schedule.getPairNumbers());
             group.put("schedule", disciplines);
             group.put("row_names", rowNames);
 
@@ -326,9 +300,7 @@ public class GroupSchedule implements ScheduleMode{
 
         try {
             Files.createDirectory(Paths.get("schedules"));
-        } catch (IOException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (IOException ignored) {}
 
         ZipCustomCopy zip = new ZipCustomCopy(
                 StringUtils.getFileNameByList("schedules", groups, ".docx"),
@@ -337,6 +309,43 @@ public class GroupSchedule implements ScheduleMode{
         zip.add("word/document.xml", writer.toString());
 
         zip.close();
+    }
+
+    private List<String> generateWeekDates(int semester, int year) {
+        boolean isSpring = semester == 2;
+        LocalDate saturday = LocalDate.of(isSpring ? year + 1 : year, isSpring ? 2 : 9, isSpring ? 8 : 1)
+                .with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+
+        return IntStream.range(0, 18)
+                .mapToObj(i -> {
+                    String date = saturday.plusWeeks(i).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                    return date + " (неделя " + (i + 1) + ")";
+                })
+                .collect(Collectors.toList());
+    }
+
+    void process(List<String> groups, int semester, int year, boolean combined)
+            throws IOException, TemplateException {
+
+        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
+        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+
+        Configuration cfg = new Configuration();
+        cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
+
+        Template template = cfg.getTemplate("document.xml");
+
+        if (combined) {
+            createSchedule(template, groups, semester, year);
+        } else {
+            groups.forEach(group -> {
+                try {
+                    createSchedule(template, Collections.singletonList(group), semester, year);
+                } catch (IOException | TemplateException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
 
     JComboBox<FacultyItem> facultyComboBox = new JComboBox<>();

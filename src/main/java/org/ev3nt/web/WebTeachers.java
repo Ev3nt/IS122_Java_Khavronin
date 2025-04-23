@@ -17,7 +17,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class WebTeachers {
-    static private Map<Integer, String> fetchTeachers(int semester, int year) throws UnsupportedEncodingException {
+    static private Map<Integer, String> fetchTeachers(int semester, int year)
+            throws UnsupportedEncodingException {
+
         Map<Integer, String> teachers = new HashMap<>();
 
         for (char letter = 'А'; letter <= 'Я'; letter++) {
@@ -45,13 +47,17 @@ public class WebTeachers {
         return teachers;
     }
 
-    static private Map<Integer, String> getCachedTeachers() throws JsonProcessingException {
+    static private Map<Integer, String> getCachedTeachers()
+            throws JsonProcessingException {
+
         String data = CacheManager.getCachedDataAsString(cacheName);
 
         return mapper.readValue(data, new TypeReference<Map<Integer, String>>() {});
     }
 
-    static private void cacheTeachers(Map<Integer, String> teachers) throws JsonProcessingException {
+    static private void cacheTeachers(Map<Integer, String> teachers)
+            throws JsonProcessingException {
+
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         String data = mapper.writeValueAsString(teachers);
@@ -63,9 +69,7 @@ public class WebTeachers {
 
         try {
             teachers = getCachedTeachers();
-        } catch (JsonProcessingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (JsonProcessingException ignored) {}
 
         try {
             if (teachers.isEmpty()) {
@@ -75,9 +79,7 @@ public class WebTeachers {
                     cacheTeachers(teachers);
                 }
             }
-        } catch (JsonProcessingException | UnsupportedEncodingException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (JsonProcessingException | UnsupportedEncodingException ignored) {}
 
         return teachers;
     }

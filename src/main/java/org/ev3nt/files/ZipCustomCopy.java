@@ -11,7 +11,9 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class ZipCustomCopy implements AutoCloseable {
-    public ZipCustomCopy(String destination, String source) throws IOException {
+    public ZipCustomCopy(String destination, String source)
+            throws IOException {
+
         contentMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         inputStream = new ZipInputStream(Files.newInputStream(Paths.get(source)));
@@ -19,7 +21,9 @@ public class ZipCustomCopy implements AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close()
+            throws IOException {
+
         for (Map.Entry<String, byte[]> entry : contentMap.entrySet()) {
             ZipEntry zipEntry = new ZipEntry(entry.getKey());
             outputStream.putNextEntry(zipEntry);

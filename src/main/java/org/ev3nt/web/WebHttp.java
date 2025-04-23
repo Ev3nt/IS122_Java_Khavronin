@@ -17,9 +17,7 @@ public class WebHttp {
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 response = new Scanner(connection.getInputStream()).useDelimiter("\\A").next();
             }
-        } catch (IOException e) {
-//           throw new RuntimeException(e);
-        }
+        } catch (IOException ignored) {}
 
         return response;
     }

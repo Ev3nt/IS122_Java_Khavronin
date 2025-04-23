@@ -113,12 +113,8 @@ public class TeacherSchedule implements ScheduleMode{
         buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, buttonPanel.getPreferredSize().height));
 
-//        JButton singleSchedule = new JButton("Индивидуальное расписание");
-//        JButton multiSchedule = new JButton("Общее расписание");
         JButton createSchedule = new JButton("Создать расписание");
 
-//        buttonPanel.add(singleSchedule);
-//        buttonPanel.add(multiSchedule);
         buttonPanel.add(createSchedule);
 
         panel.add(groupPanel);
@@ -217,7 +213,7 @@ public class TeacherSchedule implements ScheduleMode{
             }
 
             try {
-                process(selectedTeachers, parent.getSemester(), parent.getYear());
+                process(selectedTeachers, parent.getSemester(), parent.getYear(), parent.getScheduleFormat());
 
                 JOptionPane.showMessageDialog(
                         null,
@@ -232,7 +228,6 @@ public class TeacherSchedule implements ScheduleMode{
                         "Не удалось создать расписание",
                         JOptionPane.ERROR_MESSAGE
                 );
-//                throw new RuntimeException(ex);
             }
         });
 
@@ -261,6 +256,7 @@ public class TeacherSchedule implements ScheduleMode{
             this.teacherId = teacherId;
         }
 
+        @SuppressWarnings("unused")
         public TeacherItem() {}
 
         @Override
@@ -276,6 +272,7 @@ public class TeacherSchedule implements ScheduleMode{
             return name;
         }
 
+        @SuppressWarnings("unused")
         public void setTeacherId(Integer teacherId) {
             this.teacherId = teacherId;
         }
@@ -308,14 +305,8 @@ public class TeacherSchedule implements ScheduleMode{
         return text.toString();
     }
 
-    void process(List<TeacherItem> teachers, int semester, int year) throws IOException, TemplateException {
-        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
-        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
-
-        Configuration cfg = new Configuration();
-        cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
-
-        Template template = cfg.getTemplate("document.xml");
+    void createSchedule(Template template, List<TeacherItem> teachers, int semester, int year)
+            throws IOException, TemplateException {
 
         Map<String, Object> root = new HashMap<>();
         List<Map<String, Object>> teacherList = new ArrayList<>();
@@ -362,9 +353,7 @@ public class TeacherSchedule implements ScheduleMode{
 
         try {
             Files.createDirectory(Paths.get("schedules"));
-        } catch (IOException e) {
-//            throw new RuntimeException(e);
-        }
+        } catch (IOException ignored) { }
 
         List<String> teacherNames = teachers.stream().map(TeacherItem::getName).collect(Collectors.toList());
         ZipCustomCopy zip = new ZipCustomCopy(
@@ -374,6 +363,30 @@ public class TeacherSchedule implements ScheduleMode{
         zip.add("word/document.xml", writer.toString());
 
         zip.close();
+    }
+
+    void process(List<TeacherItem> teachers, int semester, int year, boolean combined)
+            throws IOException, TemplateException {
+
+        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
+        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+
+        Configuration cfg = new Configuration();
+        cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
+
+        Template template = cfg.getTemplate("document.xml");
+
+        if (combined) {
+            createSchedule(template, teachers, semester, year);
+        } else {
+            teachers.forEach(teacher -> {
+                try {
+                    createSchedule(template, Collections.singletonList(teacher), semester, year);
+                } catch (IOException | TemplateException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
 
     static JTextField teacherName = new JTextField();
