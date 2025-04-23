@@ -7,6 +7,7 @@ import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.files.ResourceLoader;
 import org.ev3nt.files.ZipCustomCopy;
 import org.ev3nt.gui.Window;
+import org.ev3nt.utils.StringUtils;
 import org.ev3nt.web.WebGroups;
 import org.ev3nt.web.WebSchedule;
 import org.ev3nt.web.dto.LessonDTO;
@@ -25,6 +26,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.List;
+
+import static org.ev3nt.utils.StringUtils.appendIfNotNull;
 
 public class GroupSchedule implements ScheduleMode{
     public GroupSchedule() {
@@ -207,19 +210,6 @@ public class GroupSchedule implements ScheduleMode{
                 );
 //                throw new RuntimeException(ex);
             }
-//            ScheduleDTO group = WebSchedule.getGroupSchedule("ИСз-124", parent.getSemester(), parent.getYear());
-//            System.out.println(group.getDisciplines());
-//
-//            Map<String, List<String>> groups = WebGroups.getGroups();
-//
-//            for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
-//                for (String groupName : entry.getValue()) {
-//                    group = WebSchedule.getGroupSchedule(groupName, parent.getSemester(), parent.getYear());
-//                }
-//            }
-//
-//            group = WebSchedule.getTeacherSchedule(146, parent.getSemester(), parent.getYear());
-//            System.out.println(group.getDisciplines());
         });
 
         InitFields();
@@ -261,16 +251,6 @@ public class GroupSchedule implements ScheduleMode{
         List<String> groups;
     }
 
-    private void appendIfNotNull(StringBuilder builder, String value) {
-        if (value != null && !value.isEmpty()) {
-            if (builder.length() > 0) {
-                builder.append(" ");
-            }
-
-            builder.append(value.trim());
-        }
-    }
-
     String preparePlainText(LessonDTO lesson) {
         StringBuilder text = new StringBuilder();
 
@@ -307,12 +287,10 @@ public class GroupSchedule implements ScheduleMode{
             }
 
             Map<Integer, Map<Integer, List<LessonDTO>>> disciplines = schedule.getDisciplines();
-            schedule.getDisciplines().values().stream()
-                    .flatMap(semesterMap -> semesterMap.values().stream())
-                    .flatMap(List::stream)
-                    .forEach(lesson -> lesson.setPlainText(
-                            preparePlainText(lesson)
-                    ));
+
+            schedule.prepareDisciplines(this::preparePlainText);
+
+            List<Integer> pairNumbers = schedule.getPairNumbers();
 
             List<String> rowNames;
             if (groupName.contains("з-")) {
@@ -334,8 +312,7 @@ public class GroupSchedule implements ScheduleMode{
 
             Map<String, Object> group = new HashMap<>();
             group.put("title", schedule.getGroup().getName());
-            group.put("first_lesson_number", schedule.getMinLessonNumber());
-            group.put("last_lesson_number", schedule.getMaxLessonNumber());
+            group.put("columns", pairNumbers);
             group.put("schedule", disciplines);
             group.put("row_names", rowNames);
 
@@ -354,7 +331,7 @@ public class GroupSchedule implements ScheduleMode{
         }
 
         ZipCustomCopy zip = new ZipCustomCopy(
-                "schedules/" + String.join(", ", groups) + ".docx",
+                StringUtils.getFileNameByList("schedules", groups, ".docx"),
                 templatesPath.resolve("Template.docx").toString());
 
         zip.add("word/document.xml", writer.toString());

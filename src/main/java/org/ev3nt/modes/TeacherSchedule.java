@@ -1,18 +1,34 @@
 package org.ev3nt.modes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import org.ev3nt.files.FavouriteManager;
+import org.ev3nt.files.ResourceLoader;
+import org.ev3nt.files.ZipCustomCopy;
 import org.ev3nt.gui.Window;
+import org.ev3nt.utils.StringUtils;
+import org.ev3nt.web.WebSchedule;
 import org.ev3nt.web.WebTeachers;
+import org.ev3nt.web.dto.LessonDTO;
+import org.ev3nt.web.dto.ScheduleDTO;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.ev3nt.utils.StringUtils.appendIfNotNull;
 
 public class TeacherSchedule implements ScheduleMode{
     public TeacherSchedule() {
@@ -154,8 +170,8 @@ public class TeacherSchedule implements ScheduleMode{
             } else {
                 JOptionPane.showMessageDialog(
                         null,
-                        "Группа не выбрана!\nПожалуйста, выберите группу в выпадающем списке.",
-                        "Не удалось добавить группу",
+                        "Преподаватель не выбран!\nПожалуйста, выберите преподавателя в выпадающем списке.",
+                        "Не удалось добавить преподавателя",
                         JOptionPane.WARNING_MESSAGE
                 );
             }
@@ -177,10 +193,46 @@ public class TeacherSchedule implements ScheduleMode{
             } else {
                 JOptionPane.showMessageDialog(
                         null,
-                        "Не выбрано ни одной группы для удаления!\nПожалуйста, выделите нужные группы в списке.",
+                        "Не выбрано ни одного преподавателя для удаления!\n" +
+                                "Пожалуйста, выделите нужных преподавателей в списке.",
                         "Не удалось удалить группы",
                         JOptionPane.WARNING_MESSAGE
                 );
+            }
+        });
+
+        createSchedule.addActionListener(e -> {
+            List<TeacherItem> selectedTeachers = favouriteList.getSelectedValuesList();
+
+            if (selectedTeachers.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Ни один преподаватель не выбран!\n" +
+                                "Пожалуйста, выделите нужных преподавателей в списке.",
+                        "Не удалось создать расписание",
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                return;
+            }
+
+            try {
+                process(selectedTeachers, parent.getSemester(), parent.getYear());
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Расписание создано!",
+                        "Успех",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } catch (IOException | TemplateException ex) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        ex.getMessage(),
+                        "Не удалось создать расписание",
+                        JOptionPane.ERROR_MESSAGE
+                );
+//                throw new RuntimeException(ex);
             }
         });
 
@@ -239,10 +291,97 @@ public class TeacherSchedule implements ScheduleMode{
         Integer teacherId;
     }
 
+    String preparePlainText(LessonDTO lesson) {
+        StringBuilder text = new StringBuilder();
+
+        appendIfNotNull(text, lesson.getDiscipline());
+        appendIfNotNull(text, lesson.getType());
+        appendIfNotNull(text, lesson.getNumber_week() != null ? lesson.getNumber_week().replace("/", "-") : null);
+        appendIfNotNull(text, lesson.getUnder_group());
+        appendIfNotNull(text, lesson.getAud());
+        appendIfNotNull(text, lesson.getGroup_name());
+
+        if (lesson.getType_week() != null && !"all".equals(lesson.getType_week())) {
+            text.append(" (").append("even".equals(lesson.getType_week()) ? "чётная" : "нечётная").append(")");
+        }
+
+        return text.toString();
+    }
+
+    void process(List<TeacherItem> teachers, int semester, int year) throws IOException, TemplateException {
+        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
+        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+
+        Configuration cfg = new Configuration();
+        cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
+
+        Template template = cfg.getTemplate("document.xml");
+
+        Map<String, Object> root = new HashMap<>();
+        List<Map<String, Object>> teacherList = new ArrayList<>();
+        for (TeacherItem teacher : teachers) {
+            Integer teacherId = teacher.getTeacherId();
+            String teacherName = teacher.getName();
+            ScheduleDTO schedule = WebSchedule.getTeacherSchedule(teacherId, semester, year);
+
+            if (!schedule.getStatus().equals("ok")) {
+                throw new IOException(schedule.getMessage() + "\nПреподаватель: " + teacherName);
+            }
+
+            Map<Integer, Map<Integer, List<LessonDTO>>> disciplines = schedule.getDisciplines();
+
+            disciplines.entrySet().removeIf(dayEntry -> {
+                dayEntry.getValue().entrySet().removeIf(lessonsEntry -> {
+                    lessonsEntry.getValue().removeIf(lesson -> lesson.getGroup_name().contains("з-"));
+
+                    return lessonsEntry.getValue().isEmpty();
+                });
+
+                return dayEntry.getValue().isEmpty();
+            });
+
+            schedule.prepareDisciplines(this::preparePlainText);
+
+            List<Integer> pairNumbers = schedule.getPairNumbers();
+
+            List<String> rowNames = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
+
+            Map<String, Object> teacherMap = new HashMap<>();
+            teacherMap.put("title", teacherName);
+            teacherMap.put("columns", pairNumbers);
+            teacherMap.put("schedule", disciplines);
+            teacherMap.put("row_names", rowNames);
+
+            teacherList.add(teacherMap);
+        }
+
+        root.put("schedules", teacherList);
+
+        StringWriter writer = new StringWriter();
+        template.process(root, writer);
+
+        try {
+            Files.createDirectory(Paths.get("schedules"));
+        } catch (IOException e) {
+//            throw new RuntimeException(e);
+        }
+
+        List<String> teacherNames = teachers.stream().map(TeacherItem::getName).collect(Collectors.toList());
+        ZipCustomCopy zip = new ZipCustomCopy(
+                StringUtils.getFileNameByList("schedules", teacherNames, ".docx"),
+                templatesPath.resolve("Template.docx").toString());
+
+        zip.add("word/document.xml", writer.toString());
+
+        zip.close();
+    }
+
     static JTextField teacherName = new JTextField();
     static JComboBox<TeacherItem> teacherComboBox = new JComboBox<>();
     static JList<TeacherItem> favouriteList;
     static Map<Integer, String> teachers = new HashMap<>();
 
     String favouriteKey = "Teachers";
+
+    Path templatesPath = Paths.get("templates");
 }

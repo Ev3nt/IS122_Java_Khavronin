@@ -53,7 +53,7 @@
                     </w:p>
                 </w:tc>
 <!--                Pair Numbers-->
-                <#list schedule.first_lesson_number..schedule.last_lesson_number as number>
+                <#list schedule.columns as number>
                 <w:tc>
                     <w:p>
                         <w:pPr>
@@ -107,7 +107,7 @@
                     </w:p>
                 </w:tc>
 <!--                Pair-->
-                <#list schedule.first_lesson_number..schedule.last_lesson_number as number>
+                <#list schedule.columns as number>
                 <w:tc>
                     <w:tcPr>
                         <w:vAlign w:val="center"/>

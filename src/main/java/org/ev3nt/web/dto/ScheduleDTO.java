@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ScheduleDTO {
     private String status;
@@ -83,18 +86,21 @@ public class ScheduleDTO {
         this.message = message;
     }
 
-    public int getMinLessonNumber() {
-        return disciplines.values().stream()
-                .flatMapToInt(discipline -> discipline.keySet().stream().mapToInt(Integer::intValue))
-                .min()
-                .orElse(0);
+    public void prepareDisciplines(Function<LessonDTO, String> contentGenerator) {
+        disciplines.values().stream()
+                .flatMap(semesterMap -> semesterMap.values().stream())
+                .flatMap(List::stream)
+                .forEach(lesson -> lesson.setPlainText(
+                        contentGenerator.apply(lesson)
+                ));
     }
 
-    public int getMaxLessonNumber() {
+    public List<Integer> getPairNumbers() {
         return disciplines.values().stream()
-                .flatMapToInt(discipline -> discipline.keySet().stream().mapToInt(Integer::intValue))
-                .max()
-                .orElse(0);
+                .flatMap(innerMap -> innerMap.keySet().stream())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     @JsonIgnore
