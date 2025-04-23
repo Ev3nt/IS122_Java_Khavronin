@@ -97,6 +97,7 @@ public class ScheduleDTO {
                 ));
     }
 
+    @JsonIgnore
     public List<Integer> getPairNumbers() {
         List<Integer> pairNumbers = disciplines.values().stream()
                 .flatMap(innerMap -> innerMap.keySet().stream())

@@ -10,7 +10,9 @@ import javax.swing.*;
 import java.awt.*;
 
 public class Main {
-    public static void main(String[] args) throws NoSuchFieldException, IllegalAccessException {
+    public static void main(String[] args)
+            throws NoSuchFieldException, IllegalAccessException {
+
         Font defaultFont = new Font("Arial", Font.PLAIN, 18);
         UIManager.put("Button.font", defaultFont);
         UIManager.put("Label.font", defaultFont);
