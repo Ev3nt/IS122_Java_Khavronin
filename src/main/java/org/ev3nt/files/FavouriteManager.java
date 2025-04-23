@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -16,11 +17,18 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class FavouriteManager {
-    static public void saveFavourites(String key, DefaultListModel<String> favouriteModel) {
-        Map<String, List<String>> map = new HashMap<>();
-        List<String> favouriteList = IntStream.range(0, favouriteModel.size())
+    static public <E> void saveFavourites(String key, DefaultListModel<E> favouriteModel) {
+        Map<String, List<E>> map = new HashMap<>();
+        List<E> favouriteList = IntStream.range(0, favouriteModel.size())
                 .mapToObj(favouriteModel::getElementAt)
                 .collect(Collectors.toList());
+
+        String data = CacheManager.getCachedDataAsString(cacheName);
+        try {
+            map = mapper.readValue(data, new TypeReference<Map<String, List<E>>>() { });
+        } catch (JsonProcessingException e) {
+//            throw new RuntimeException(e);
+        }
 
         map.put(key, favouriteList);
 
@@ -28,20 +36,23 @@ public class FavouriteManager {
             mapper.enable(SerializationFeature.INDENT_OUTPUT);
             prettyPrinter.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
 
-            String data = mapper.writerWithDefaultPrettyPrinter().with(prettyPrinter).writeValueAsString(map);
+            data = mapper.writerWithDefaultPrettyPrinter().with(prettyPrinter).writeValueAsString(map);
             CacheManager.saveDataAsCache(cacheName, data);
         } catch (JsonProcessingException e) {
 //            throw new RuntimeException(e);
         }
     }
 
-    static public List<String> loadFavourites(String key) {
-        List<String> favourites = new ArrayList<>();
+    static public <E> List<E> loadFavourites(String key, Class<E> valueType) {
+        List<E> favourites = new ArrayList<>();
         String data = CacheManager.getCachedDataAsString(cacheName);
 
         try {
-            Map<String, List<String>> map = mapper.readValue(data, new TypeReference<Map<String, List<String>>>() { });
-            favourites.addAll(map.get(key));
+            Map<String, List<E>> map = mapper.readValue(data, new TypeReference<Map<String, List<E>>>() { });
+            List<E> favouriteList = map.get(key);
+            favourites = favouriteList.stream()
+                    .map(item -> mapper.convertValue(item, valueType))
+                    .collect(Collectors.toList());
         } catch (JsonProcessingException e) {
 //            throw new RuntimeException(e);
         }

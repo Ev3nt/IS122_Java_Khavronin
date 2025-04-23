@@ -85,13 +85,16 @@ public class WebGroups {
     }
 
     static public Map<String, List<String>> getGroups() {
-        Map<String, List<String>> groups = fetchGroups();
+        Map<String, List<String>> groups = new HashMap<>();
 
         try {
+            groups = getCachedGroups();
             if (groups.isEmpty()) {
-                groups = getCachedGroups();
-            } else {
-                cacheGroups(groups);
+                groups = fetchGroups();
+
+                if (!groups.isEmpty()) {
+                    cacheGroups(groups);
+                }
             }
         } catch (JsonProcessingException e) {
 //            throw new RuntimeException(e);

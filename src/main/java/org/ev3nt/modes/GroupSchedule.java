@@ -27,6 +27,10 @@ import java.util.*;
 import java.util.List;
 
 public class GroupSchedule implements ScheduleMode{
+    public GroupSchedule() {
+        WebGroups.getGroups();
+    }
+
     @Override
     public String getName() {
         return "Группа";
@@ -225,7 +229,7 @@ public class GroupSchedule implements ScheduleMode{
 
     private void InitFields() {
         Map<String, List<String>> groups = WebGroups.getGroups();
-        List<String> favouriteGroups = FavouriteManager.loadFavourites(favouriteKey);
+        List<String> favouriteGroups = FavouriteManager.loadFavourites(favouriteKey, String.class);
 
         for (String faculty : groups.keySet()) {
             facultyComboBox.addItem(new FacultyItem(faculty.substring(0, 1).toUpperCase() + faculty.substring(1), groups.get(faculty)));
