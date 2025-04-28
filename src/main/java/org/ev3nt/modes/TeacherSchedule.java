@@ -152,7 +152,7 @@ public class TeacherSchedule implements ScheduleMode{
 
             }
 
-            private void onChanged() {
+            void onChanged() {
                 teacherComboBox.removeAllItems();
                 String name = teacherName.getText().toLowerCase();
 
@@ -249,7 +249,7 @@ public class TeacherSchedule implements ScheduleMode{
         return panel;
     }
 
-    private void InitFields() {
+    void InitFields() {
         List<TeacherItem> favouriteTeachers = FavouriteManager.loadFavourites(favouriteKey, TeacherItem.class);
 
         DefaultListModel<TeacherItem> model = (DefaultListModel<TeacherItem>)favouriteList.getModel();

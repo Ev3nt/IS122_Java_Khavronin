@@ -1,8 +1,8 @@
 package org.ev3nt.web.dto;
 
 public class GroupDTO {
-    private String id;
-    private String name;
+    String id;
+    String name;
 
     public String getName() {
         return name;

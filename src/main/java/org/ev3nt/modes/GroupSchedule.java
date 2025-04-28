@@ -227,7 +227,7 @@ public class GroupSchedule implements ScheduleMode{
         }
     }
 
-    private void InitFields() {
+    void InitFields() {
         updateGroups();
 
         List<String> favouriteGroups = FavouriteManager.loadFavourites(favouriteKey, String.class);
@@ -326,7 +326,7 @@ public class GroupSchedule implements ScheduleMode{
         zip.close();
     }
 
-    private List<String> generateWeekDates(int semester, int year) {
+    List<String> generateWeekDates(int semester, int year) {
         boolean isSpring = semester == 2;
         LocalDate saturday = LocalDate.of(isSpring ? year + 1 : year, isSpring ? 2 : 9, isSpring ? 8 : 1)
                 .with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));

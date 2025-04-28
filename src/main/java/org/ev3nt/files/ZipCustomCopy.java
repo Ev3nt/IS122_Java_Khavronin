@@ -61,8 +61,8 @@ public class ZipCustomCopy implements AutoCloseable {
         add(name, data.getBytes(StandardCharsets.UTF_8));
     }
 
-    private final ZipInputStream inputStream;
-    private final ZipOutputStream outputStream;
+    final ZipInputStream inputStream;
+    final ZipOutputStream outputStream;
 
-    private final Map<String, byte[]> contentMap;
+    final Map<String, byte[]> contentMap;
 }

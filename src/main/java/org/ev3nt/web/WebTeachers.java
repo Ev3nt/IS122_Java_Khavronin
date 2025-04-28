@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class WebTeachers {
-    static private Map<Integer, String> fetchTeachers(int semester, int year)
+    static Map<Integer, String> fetchTeachers(int semester, int year)
             throws UnsupportedEncodingException {
 
         Map<Integer, String> teachers = new HashMap<>();
@@ -47,7 +47,7 @@ public class WebTeachers {
         return teachers;
     }
 
-    static private Map<Integer, String> getCachedTeachers()
+    static Map<Integer, String> getCachedTeachers()
             throws JsonProcessingException {
 
         String data = CacheManager.getCachedDataAsString(cacheName);
@@ -55,7 +55,7 @@ public class WebTeachers {
         return mapper.readValue(data, new TypeReference<Map<Integer, String>>() {});
     }
 
-    static private void cacheTeachers(Map<Integer, String> teachers)
+    static void cacheTeachers(Map<Integer, String> teachers)
             throws JsonProcessingException {
 
         mapper.enable(SerializationFeature.INDENT_OUTPUT);

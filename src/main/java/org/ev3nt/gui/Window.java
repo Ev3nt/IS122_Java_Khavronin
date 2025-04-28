@@ -68,7 +68,7 @@ public class Window {
         InitFields();
     }
 
-    private void InitFields() {
+    void InitFields() {
         for (int i = Year.now().getValue(); i > 2011; i--) {
             yearComboBox.addItem(new YearItem(i - 1 + " - " + i, i - 1));
         }

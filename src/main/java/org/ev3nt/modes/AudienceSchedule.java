@@ -14,7 +14,6 @@ import org.ev3nt.web.dto.LessonDTO;
 import org.ev3nt.web.dto.ScheduleDTO;
 
 import javax.swing.*;
-import javax.swing.table.TableStringConverter;
 import java.awt.*;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -200,7 +199,7 @@ public class AudienceSchedule implements ScheduleMode{
         return panel;
     }
 
-    private void InitFields() {
+    void InitFields() {
         List<String> favouriteAudiences = FavouriteManager.loadFavourites(favouriteKey, String.class);
 
         DefaultListModel<String> model = (DefaultListModel<String>)favouriteList.getModel();
@@ -231,29 +230,53 @@ public class AudienceSchedule implements ScheduleMode{
         return text.toString();
     }
 
+    boolean isNotZaoch(LessonDTO lesson, String audience, String groupName) {
+        return lesson.getAud().toLowerCase().contains(audience) && !(groupName.contains("з-") || lesson.isZaoch());
+    }
+
+    void collectAudienceLessons(ScheduleDTO schedule, String audience, Map<Integer, Map<Integer, List<LessonDTO>>> lessonsSchedule) {
+        schedule.getDisciplines().forEach((rowNum, rowLessons) ->
+                rowLessons.forEach((lessonNum, lessons) ->
+                        lessons.stream()
+                                .filter(lesson -> isNotZaoch(lesson, audience, schedule.getGroup().getName()))
+                                .forEach(lesson -> {
+                                    lesson.setGroup_name(schedule.getGroup().getName());
+                                    lessonsSchedule
+                                            .computeIfAbsent(rowNum, k -> new HashMap<>())
+                                            .computeIfAbsent(lessonNum, k -> new ArrayList<>())
+                                            .add(lesson);
+                                })
+                )
+        );
+    }
+
+    String extractAudienceName(ScheduleDTO schedule, String audience) {
+        return schedule.getDisciplines().values().stream()
+                .flatMap(row -> row.values().stream())
+                .flatMap(List::stream)
+                .filter(lesson -> lesson.getAud().toLowerCase().contains(audience))
+                .findFirst()
+                .map(LessonDTO::getAud)
+                .orElse("");
+    }
+
     void createSchedule(Template template, List<String> audiences, int semester, int year)
             throws IOException, TemplateException {
 
-        List<String> groups = WebGroups.getGroups().values()
-                .stream()
+        List<String> groups = WebGroups.getGroups().values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        List<ScheduleDTO> schedules = new ArrayList<>();
-        for (String group : groups) {
-            ScheduleDTO schedule = WebSchedule.getGroupSchedule(group, semester, year);
-            String status = schedule.getStatus();
-
-            if (status.equals("connection_error")) {
-                throw new IOException(schedule.getMessage());
-            }
-
-            if (!status.equals("ok")) {
-                continue;
-            }
-
-            schedules.add(schedule);
-        }
+        List<ScheduleDTO> schedules = groups.stream()
+                .map(group -> WebSchedule.getGroupSchedule(group, semester, year))
+                .filter(schedule -> {
+                    String status = schedule.getStatus();
+                    if (status.equals("connection_error")) {
+                        throw new RuntimeException(schedule.getMessage());
+                    }
+                    return status.equals("ok");
+                })
+                .collect(Collectors.toList());
 
         List<String> rowNames = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
 
@@ -265,27 +288,10 @@ public class AudienceSchedule implements ScheduleMode{
             String audienceName = "";
 
             for (ScheduleDTO schedule : schedules) {
-                Map<Integer, Map<Integer, List<LessonDTO>>> disciplines = schedule.getDisciplines();
-                String groupName = schedule.getGroup().getName();
+                collectAudienceLessons(schedule, audience, lessonsSchedule);
 
-                for (Map.Entry<Integer, Map<Integer, List<LessonDTO>>> rowLessonsEntry : disciplines.entrySet()) {
-                    Map<Integer, List<LessonDTO>> rowLessons = rowLessonsEntry.getValue();
-
-                    for (Map.Entry<Integer, List<LessonDTO>> lessonsEntry : rowLessons.entrySet()) {
-                        List<LessonDTO> lessons = lessonsEntry.getValue();
-                        for (LessonDTO lesson : lessons) {
-                            if (lesson.getAud().toLowerCase().contains(audience) && !(groupName.contains("з-") || lesson.isZaoch())) {
-                                Map<Integer, List<LessonDTO>> combinedRowLessons = lessonsSchedule.computeIfAbsent(rowLessonsEntry.getKey(), k -> new HashMap<>());
-                                List<LessonDTO> combinedLessons = combinedRowLessons.computeIfAbsent(lessonsEntry.getKey(), k -> new ArrayList<>());
-
-                                lesson.setGroup_name(groupName);
-
-                                combinedLessons.add(lesson);
-
-                                audienceName = audienceName.isEmpty() ? lesson.getAud() : audienceName;
-                            }
-                        }
-                    }
+                if (audienceName.isEmpty()) {
+                    audienceName = extractAudienceName(schedule, audience);
                 }
             }
 

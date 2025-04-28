@@ -9,16 +9,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ScheduleDTO {
-    private String status;
-    private String time;
-    private TeacherDTO teacher;
-    private GroupDTO group;
-    private String semestr;
-    private String year;
-    private String message;
+    String status;
+    String time;
+    TeacherDTO teacher;
+    GroupDTO group;
+    String semestr;
+    String year;
+    String message;
 
     @JsonIgnore
-    private Map<Integer, Map<Integer, List<LessonDTO>>> disciplines;
+    Map<Integer, Map<Integer, List<LessonDTO>>> disciplines;
 
     public String getStatus() {
         return status;

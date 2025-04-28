@@ -3,23 +3,23 @@ package org.ev3nt.web.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class LessonDTO {
-    private String id_day;
-    private String number_para;
-    private String discipline;
-    private String type;
-    private String type_week;
-    private String aud;
-    private String number_week;
-    private String comment;
-    private boolean zaoch;
-    private String name;
-    private String under_group;
-    private String under_group_1;
-    private String under_group_2;
-    private String group_name;
+    String id_day;
+    String number_para;
+    String discipline;
+    String type;
+    String type_week;
+    String aud;
+    String number_week;
+    String comment;
+    boolean zaoch;
+    String name;
+    String under_group;
+    String under_group_1;
+    String under_group_2;
+    String group_name;
 
     @JsonIgnore
-    private String plain_text;
+    String plain_text;
 
     public String getId_day() {
         return id_day;

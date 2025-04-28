@@ -102,7 +102,7 @@ public class WebSchedule {
         scheduleDTO.setDisciplines(disciplines);
     }
 
-    static private ScheduleDTO fetchSchedule(String id, int semester, int year, ScheduleType scheduleType) {
+    static ScheduleDTO fetchSchedule(String id, int semester, int year, ScheduleType scheduleType) {
         ScheduleDTO scheduleDTO = new ScheduleDTO();
 
         try {
@@ -139,11 +139,11 @@ public class WebSchedule {
         return scheduleDTO;
     }
 
-    static private String getCacheName(String id, int semester, int year) {
+    static String getCacheName(String id, int semester, int year) {
         return id + "_" + semester + "_" + year;
     }
 
-    static private ScheduleDTO getCachedSchedule(String id, int semester, int year)
+    static ScheduleDTO getCachedSchedule(String id, int semester, int year)
             throws JsonProcessingException {
 
         String cacheName = getCacheName(id, semester, year);
@@ -159,7 +159,7 @@ public class WebSchedule {
         return scheduleDTO;
     }
 
-    static private void cacheSchedule(String id, int semester, int year, ScheduleDTO schedule)
+    static void cacheSchedule(String id, int semester, int year, ScheduleDTO schedule)
             throws JsonProcessingException {
 
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -169,7 +169,7 @@ public class WebSchedule {
         CacheManager.saveDataAsCache(cacheName, data);
     }
 
-    static private ScheduleDTO getSchedule(String id, int semester, int year, ScheduleType scheduleType) {
+    static ScheduleDTO getSchedule(String id, int semester, int year, ScheduleType scheduleType) {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         ScheduleDTO scheduleDTO = fetchSchedule(id, semester, year, scheduleType);
