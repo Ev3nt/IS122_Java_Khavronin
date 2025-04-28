@@ -1,6 +1,7 @@
-package org.ev3nt.classes;
+package org.ev3nt.files;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,15 +12,19 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class ZipCustomCopy implements AutoCloseable {
-    public ZipCustomCopy(String destination, String source) throws IOException {
+    public ZipCustomCopy(String destination, String source)
+            throws IOException {
+
         contentMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        inputStream = new ZipInputStream(Files.newInputStream(Paths.get(source)));
-        outputStream = new ZipOutputStream(Files.newOutputStream(Paths.get(destination)));
+        inputStream = new ZipInputStream(Files.newInputStream(Paths.get(source)), StandardCharsets.UTF_8);
+        outputStream = new ZipOutputStream(Files.newOutputStream(Paths.get(destination)), StandardCharsets.UTF_8);
     }
 
     @Override
-    public void close() throws IOException {
+    public void close()
+            throws IOException {
+
         for (Map.Entry<String, byte[]> entry : contentMap.entrySet()) {
             ZipEntry zipEntry = new ZipEntry(entry.getKey());
             outputStream.putNextEntry(zipEntry);
@@ -42,7 +47,7 @@ public class ZipCustomCopy implements AutoCloseable {
 
             outputStream.closeEntry();
         }
-        
+
         inputStream.close();
         outputStream.close();
     }
@@ -53,11 +58,11 @@ public class ZipCustomCopy implements AutoCloseable {
     }
 
     public void add(String name, String data) {
-        add(name, data.getBytes());
+        add(name, data.getBytes(StandardCharsets.UTF_8));
     }
 
-    private final ZipInputStream inputStream;
-    private final ZipOutputStream outputStream;
+    final ZipInputStream inputStream;
+    final ZipOutputStream outputStream;
 
-    private final Map<String, byte[]> contentMap;
+    final Map<String, byte[]> contentMap;
 }

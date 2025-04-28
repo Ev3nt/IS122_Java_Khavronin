@@ -1,4 +1,4 @@
-package org.ev3nt.web.classes.dto;
+package org.ev3nt.web.dto;
 
 public class TeacherDTO {
     String id;
