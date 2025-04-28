@@ -6,6 +6,7 @@ import freemarker.template.TemplateException;
 import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.files.ResourceLoader;
 import org.ev3nt.files.ZipCustomCopy;
+import org.ev3nt.gui.UpdatingMessage;
 import org.ev3nt.gui.Window;
 import org.ev3nt.utils.StringUtils;
 import org.ev3nt.web.WebGroups;
@@ -37,12 +38,17 @@ public class GroupSchedule implements ScheduleMode{
     }
 
     @Override
+    public void setParent(Window parent) {
+        this.parent = parent;
+    }
+
+    @Override
     public String getName() {
         return "Группа";
     }
 
     @Override
-    public JPanel getPanel(Window parent) {
+    public JPanel getPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
@@ -213,13 +219,18 @@ public class GroupSchedule implements ScheduleMode{
         return panel;
     }
 
-    private void InitFields() {
+    void updateGroups() {
         Map<String, List<String>> groups = WebGroups.getGroups();
-        List<String> favouriteGroups = FavouriteManager.loadFavourites(favouriteKey, String.class);
 
         for (String faculty : groups.keySet()) {
             facultyComboBox.addItem(new FacultyItem(faculty.substring(0, 1).toUpperCase() + faculty.substring(1), groups.get(faculty)));
         }
+    }
+
+    private void InitFields() {
+        updateGroups();
+
+        List<String> favouriteGroups = FavouriteManager.loadFavourites(favouriteKey, String.class);
 
         DefaultListModel<String> model = (DefaultListModel<String>)favouriteList.getModel();
 
@@ -230,6 +241,10 @@ public class GroupSchedule implements ScheduleMode{
 
             favouriteList.repaint();
         }
+
+        parent.addUpdateDataCallback(e -> {
+            UpdatingMessage.wait(parent.getWindow(), "Обновление списка групп...", this::updateGroups);
+        });
     }
 
     static class FacultyItem {
@@ -355,4 +370,6 @@ public class GroupSchedule implements ScheduleMode{
     String favouriteKey = "Groups";
 
     Path templatesPath = Paths.get("templates");
+
+    Window parent;
 }

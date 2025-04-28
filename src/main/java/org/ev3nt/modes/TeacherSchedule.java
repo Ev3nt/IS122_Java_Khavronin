@@ -7,6 +7,7 @@ import freemarker.template.TemplateException;
 import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.files.ResourceLoader;
 import org.ev3nt.files.ZipCustomCopy;
+import org.ev3nt.gui.UpdatingMessage;
 import org.ev3nt.gui.Window;
 import org.ev3nt.utils.StringUtils;
 import org.ev3nt.web.WebSchedule;
@@ -32,6 +33,10 @@ import static org.ev3nt.utils.StringUtils.appendIfNotNull;
 
 public class TeacherSchedule implements ScheduleMode{
     public TeacherSchedule() {
+        updateTeacherList();
+    }
+
+    void updateTeacherList() {
         LocalDate now = LocalDate.now();
         int month = now.getMonthValue();
         int semester = month > 8 ? 1 : 2;
@@ -41,12 +46,17 @@ public class TeacherSchedule implements ScheduleMode{
     }
 
     @Override
+    public void setParent(Window parent) {
+        this.parent = parent;
+    }
+
+    @Override
     public String getName() {
         return "Преподаватель";
     }
 
     @Override
-    public JPanel getPanel(Window parent) {
+    public JPanel getPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
@@ -60,6 +70,9 @@ public class TeacherSchedule implements ScheduleMode{
         JButton favourite = new JButton("+");
         Dimension buttonSize = new Dimension(favourite.getPreferredSize().width, favourite.getPreferredSize().height);
         favourite.setPreferredSize(buttonSize);
+
+        Dimension fieldSize = new Dimension(teacherName.getPreferredSize().width, buttonSize.height);
+        teacherName.setPreferredSize(fieldSize);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -95,7 +108,7 @@ public class TeacherSchedule implements ScheduleMode{
 
         JPanel headerPanel = new JPanel(new BorderLayout());
 
-        headerPanel.add(new JLabel("Избранные группы"), BorderLayout.WEST);
+        headerPanel.add(new JLabel("Избранные преродаватели"), BorderLayout.WEST);
         headerPanel.add(unFavouriteButtonPanel, BorderLayout.EAST);
 
         headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, headerPanel.getPreferredSize().height));
@@ -191,7 +204,7 @@ public class TeacherSchedule implements ScheduleMode{
                         null,
                         "Не выбрано ни одного преподавателя для удаления!\n" +
                                 "Пожалуйста, выделите нужных преподавателей в списке.",
-                        "Не удалось удалить группы",
+                        "Не удалось удалить преподавателя",
                         JOptionPane.WARNING_MESSAGE
                 );
             }
@@ -248,6 +261,8 @@ public class TeacherSchedule implements ScheduleMode{
 
             favouriteList.repaint();
         }
+
+        parent.addUpdateDataCallback(e -> UpdatingMessage.wait(parent.getWindow(), "Обновление списка преподавателей...", this::updateTeacherList));
     }
 
     static class TeacherItem {
@@ -264,6 +279,7 @@ public class TeacherSchedule implements ScheduleMode{
             return name;
         }
 
+        @SuppressWarnings("unused")
         public void setName(String name) {
             this.name = name;
         }
@@ -308,6 +324,8 @@ public class TeacherSchedule implements ScheduleMode{
     void createSchedule(Template template, List<TeacherItem> teachers, int semester, int year)
             throws IOException, TemplateException {
 
+        List<String> rowNames = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
+
         Map<String, Object> root = new HashMap<>();
         List<Map<String, Object>> teacherList = new ArrayList<>();
         for (TeacherItem teacher : teachers) {
@@ -334,8 +352,6 @@ public class TeacherSchedule implements ScheduleMode{
             schedule.prepareDisciplines(this::preparePlainText);
 
             List<Integer> pairNumbers = schedule.getPairNumbers();
-
-            List<String> rowNames = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
 
             Map<String, Object> teacherMap = new HashMap<>();
             teacherMap.put("title", teacherName);
@@ -389,12 +405,14 @@ public class TeacherSchedule implements ScheduleMode{
         }
     }
 
-    static JTextField teacherName = new JTextField();
-    static JComboBox<TeacherItem> teacherComboBox = new JComboBox<>();
-    static JList<TeacherItem> favouriteList;
-    static Map<Integer, String> teachers = new HashMap<>();
+    JTextField teacherName = new JTextField();
+    JComboBox<TeacherItem> teacherComboBox = new JComboBox<>();
+    JList<TeacherItem> favouriteList;
+    Map<Integer, String> teachers;
 
     String favouriteKey = "Teachers";
 
     Path templatesPath = Paths.get("templates");
+
+    Window parent;
 }

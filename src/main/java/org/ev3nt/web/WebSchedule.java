@@ -175,7 +175,14 @@ public class WebSchedule {
         ScheduleDTO scheduleDTO = fetchSchedule(id, semester, year, scheduleType);
         try {
             if (scheduleDTO.isEmpty()) {
-                scheduleDTO = getCachedSchedule(id, semester, year);
+                try {
+                    scheduleDTO = getCachedSchedule(id, semester, year);
+                } catch (JsonProcessingException ignored) {}
+
+                if (scheduleDTO.isEmpty()) {
+                    scheduleDTO.setStatus("connection_error");
+                    scheduleDTO.setMessage("Не удалось получить расписание или нет подключения к интернету.");
+                }
             } else {
                 cacheSchedule(id, semester, year, scheduleDTO);
             }

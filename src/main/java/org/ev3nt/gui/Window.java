@@ -5,9 +5,18 @@ import org.ev3nt.modes.ScheduleMode;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Year;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class Window {
     public Window(String title, int width, int height, double coefficient, boolean resizable) {
@@ -33,6 +42,9 @@ public class Window {
         ScheduleFormatComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         ScheduleFormatComboBox.setMaximumSize(new Dimension(Short.MAX_VALUE, ScheduleFormatComboBox.getPreferredSize().height));
 
+        updateData.setText("Обновить данные");
+        updateData.setMaximumSize(new Dimension(Short.MAX_VALUE, updateData.getPreferredSize().height));
+
         leftPanel.add(new JLabel("Учебный год"));
         leftPanel.add(yearComboBox);
         leftPanel.add(Box.createVerticalStrut(10));
@@ -41,6 +53,8 @@ public class Window {
         leftPanel.add(Box.createVerticalStrut(10));
         leftPanel.add(new JLabel("Формат расписания"));
         leftPanel.add(ScheduleFormatComboBox);
+        leftPanel.add(Box.createVerticalStrut(10));
+        leftPanel.add(updateData);
 
         leftPanel.setBorder(BorderFactory.createEmptyBorder(15,15,15,10));
 
@@ -65,12 +79,33 @@ public class Window {
         ScheduleFormatComboBox.addItem(new ScheduleFormat("Один файл", true));
         ScheduleFormatComboBox.addItem(new ScheduleFormat("Отдельные файлы", false));
 
+        updateData.addActionListener(e -> {
+            try (Stream<Path> pathStream = Files.walk(Paths.get("cache"))) {
+                pathStream
+                        .sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.delete(path);
+                            } catch (IOException ex) {
+                                System.err.println("Ошибка при удалении: " + path);
+                            }
+                        });
+            } catch (IOException ex) {
+                System.err.println("Ошибка при обходе директории: " + ex.getMessage());
+            }
+
+            for (ActionListener listener : updateCallbacks) {
+                listener.actionPerformed(e);
+            }
+        });
     }
 
     public <T extends ScheduleMode> void add(Supplier<T> itemFactory) {
         T item = itemFactory.get();
 
-        tabbedPane.addTab(item.getName(), item.getPanel(this));
+        item.setParent(this);
+
+        tabbedPane.addTab(item.getName(), item.getPanel());
     }
 
     public int getYear() {
@@ -85,8 +120,18 @@ public class Window {
         return ((ScheduleFormat)Objects.requireNonNull(ScheduleFormatComboBox.getSelectedItem())).combined;
     }
 
+    public void addUpdateDataCallback(ActionListener listener) {
+        if (!updateCallbacks.contains(listener)) {
+            updateCallbacks.add(listener);
+        }
+    }
+
     public void run() {
         window.setVisible(true);
+    }
+
+    public JFrame getWindow() {
+        return window;
     }
 
     static class YearItem {
@@ -138,5 +183,8 @@ public class Window {
     JComboBox<YearItem> yearComboBox = new JComboBox<>();
     JComboBox<SemesterItem> semesterComboBox = new JComboBox<>();
     JComboBox<ScheduleFormat> ScheduleFormatComboBox = new JComboBox<>();
+    JButton updateData = new JButton();
     JTabbedPane tabbedPane = new JTabbedPane();
+
+    List<ActionListener> updateCallbacks = new ArrayList<>();
 }

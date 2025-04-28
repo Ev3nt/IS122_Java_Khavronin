@@ -5,6 +5,7 @@ import org.ev3nt.gui.Window;
 import javax.swing.*;
 
 public interface ScheduleMode {
+    void setParent(Window parent);
     String getName();
-    JPanel getPanel(Window parent);
+    JPanel getPanel();
 }

@@ -1,5 +1,6 @@
 package org.ev3nt;
 
+import org.ev3nt.gui.UpdatingMessage;
 import org.ev3nt.gui.Window;
 import org.ev3nt.modes.AudienceSchedule;
 import org.ev3nt.modes.GroupSchedule;
@@ -20,9 +21,11 @@ public class Main {
 
         Window window = new Window("Расписание", 900, 600, 0.3, false);
 
-        window.add(GroupSchedule::new);
-        window.add(TeacherSchedule::new);
-        window.add(AudienceSchedule::new);
+        UpdatingMessage.wait(window.getWindow(), "Обновление данных...", () -> {
+            window.add(GroupSchedule::new);
+            window.add(TeacherSchedule::new);
+            window.add(AudienceSchedule::new);
+        });
 
         window.run();
     }
