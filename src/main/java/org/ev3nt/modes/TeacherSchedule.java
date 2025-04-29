@@ -7,7 +7,7 @@ import freemarker.template.TemplateException;
 import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.files.ResourceLoader;
 import org.ev3nt.files.ZipCustomCopy;
-import org.ev3nt.gui.UpdatingMessage;
+import org.ev3nt.gui.ModalMessage;
 import org.ev3nt.gui.Window;
 import org.ev3nt.utils.StringUtils;
 import org.ev3nt.web.WebSchedule;
@@ -19,6 +19,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -127,8 +128,10 @@ public class TeacherSchedule implements ScheduleMode{
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, buttonPanel.getPreferredSize().height));
 
         JButton createSchedule = new JButton("Создать расписание");
+        JButton flatSchedule = new JButton("Создать общее расписание");
 
         buttonPanel.add(createSchedule);
+        buttonPanel.add(flatSchedule);
 
         panel.add(groupPanel);
         panel.add(Box.createVerticalStrut(10));
@@ -210,39 +213,9 @@ public class TeacherSchedule implements ScheduleMode{
             }
         });
 
-        createSchedule.addActionListener(e -> {
-            List<TeacherItem> selectedTeachers = favouriteList.getSelectedValuesList();
+        createSchedule.addActionListener(e -> createSchedule(false));
 
-            if (selectedTeachers.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Ни один преподаватель не выбран!\n" +
-                                "Пожалуйста, выделите нужных преподавателей в списке.",
-                        "Не удалось создать расписание",
-                        JOptionPane.WARNING_MESSAGE
-                );
-
-                return;
-            }
-
-            try {
-                process(selectedTeachers, parent.getSemester(), parent.getYear(), parent.getScheduleFormat());
-
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Расписание создано!",
-                        "Успех",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-            } catch (IOException | TemplateException | RuntimeException ex) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        ex.getMessage(),
-                        "Не удалось создать расписание",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
-        });
+        flatSchedule.addActionListener(e -> createSchedule(true));
 
         InitFields();
 
@@ -262,7 +235,7 @@ public class TeacherSchedule implements ScheduleMode{
             favouriteList.repaint();
         }
 
-        parent.addUpdateDataCallback(e -> UpdatingMessage.wait(parent.getWindow(), "Обновление списка преподавателей...", this::updateTeacherList));
+        parent.addUpdateDataCallback(e -> ModalMessage.wait(parent.getWindow(), "Обновление данных", "Обновление списка преподавателей...", this::updateTeacherList));
     }
 
     static class TeacherItem {
@@ -304,6 +277,42 @@ public class TeacherSchedule implements ScheduleMode{
         Integer teacherId;
     }
 
+    void createSchedule(boolean isFlat) {
+        ModalMessage.wait(parent.getWindow(), "Создание расписания", "Расписание создаётся...", () -> {
+            List<TeacherItem> selectedTeachers = favouriteList.getSelectedValuesList();
+
+            if (selectedTeachers.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Ни один преподаватель не выбран!\n" +
+                                "Пожалуйста, выделите нужных преподавателей в списке.",
+                        "Не удалось создать расписание",
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                return;
+            }
+
+            try {
+                process(selectedTeachers, parent.getSemester(), parent.getYear(), parent.getScheduleFormat(), isFlat);
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Расписание создано!",
+                        "Успех",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } catch (IOException | TemplateException | RuntimeException ex) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        ex.getMessage(),
+                        "Не удалось создать расписание",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
+    }
+
     String preparePlainText(LessonDTO lesson) {
         StringBuilder text = new StringBuilder();
 
@@ -321,13 +330,15 @@ public class TeacherSchedule implements ScheduleMode{
         return text.toString();
     }
 
-    void createSchedule(Template template, List<TeacherItem> teachers, int semester, int year)
+    void createSchedule(Template template, List<TeacherItem> teachers, int semester, int year, boolean isFlat)
             throws IOException, TemplateException {
 
         List<String> rowNames = Arrays.asList("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС");
 
         Map<String, Object> root = new HashMap<>();
         List<Map<String, Object>> teacherList = new ArrayList<>();
+        List<Integer> days = new ArrayList<>();
+        Map<Integer, List<Integer>> lessonsCounts = new HashMap<>();
         for (TeacherItem teacher : teachers) {
             Integer teacherId = teacher.getTeacherId();
             String teacherName = teacher.getName();
@@ -351,6 +362,11 @@ public class TeacherSchedule implements ScheduleMode{
 
             schedule.prepareDisciplines(this::preparePlainText);
 
+            days.addAll(new ArrayList<>(disciplines.keySet()));
+            disciplines.forEach((k, v) -> lessonsCounts
+                    .computeIfAbsent(k, e -> new ArrayList<>())
+                    .addAll(v.keySet()));
+
             List<Integer> pairNumbers = schedule.getPairNumbers();
 
             Map<String, Object> teacherMap = new HashMap<>();
@@ -362,6 +378,19 @@ public class TeacherSchedule implements ScheduleMode{
             teacherList.add(teacherMap);
         }
 
+        days = days.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
+        lessonsCounts.replaceAll((k, v) -> v.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList()));
+
+        root.put("days", days);
+        root.put("lessonsCounts", lessonsCounts);
+        root.put("rowNames", rowNames);
         root.put("schedules", teacherList);
 
         StringWriter writer = new StringWriter();
@@ -372,36 +401,50 @@ public class TeacherSchedule implements ScheduleMode{
         } catch (IOException ignored) { }
 
         List<String> teacherNames = teachers.stream().map(TeacherItem::getName).collect(Collectors.toList());
-        ZipCustomCopy zip = new ZipCustomCopy(
-                StringUtils.getFileNameByList("schedules", teacherNames, ".docx"),
-                templatesPath.resolve("Template.docx").toString());
+        if (!isFlat) {
+            ZipCustomCopy zip = new ZipCustomCopy(
+                    StringUtils.getFileNameByList("schedules", teacherNames, ".docx"),
+                    templatesPath.resolve("Template.docx").toString());
 
-        zip.add("word/document.xml", writer.toString());
+            zip.add("word/document.xml", writer.toString());
 
-        zip.close();
+            zip.close();
+        } else {
+            FileOutputStream file = new FileOutputStream(StringUtils.getFileNameByList("schedules", teacherNames, ".html"));
+            file.write(writer.toString().getBytes());
+            file.close();
+        }
     }
 
-    void process(List<TeacherItem> teachers, int semester, int year, boolean combined)
+    void process(List<TeacherItem> teachers, int semester, int year, boolean combined, boolean isFlat)
             throws IOException, TemplateException, RuntimeException {
 
-        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
-        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+        if (!isFlat) {
+            ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
+            ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+        } else {
+            ResourceLoader.extract(templatesPath.resolve("template.html").toString());
+        }
 
         Configuration cfg = new Configuration();
         cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
 
-        Template template = cfg.getTemplate("document.xml");
+        Template template = !isFlat ? cfg.getTemplate("document.xml") : cfg.getTemplate("template.html");
 
-        if (combined) {
-            createSchedule(template, teachers, semester, year);
+        if (!isFlat) {
+            if (combined) {
+                createSchedule(template, teachers, semester, year, false);
+            } else {
+                teachers.forEach(teacher -> {
+                    try {
+                        createSchedule(template, Collections.singletonList(teacher), semester, year, false);
+                    } catch (IOException | TemplateException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
         } else {
-            teachers.forEach(teacher -> {
-                try {
-                    createSchedule(template, Collections.singletonList(teacher), semester, year);
-                } catch (IOException | TemplateException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            createSchedule(template, teachers, semester, year, true);
         }
     }
 

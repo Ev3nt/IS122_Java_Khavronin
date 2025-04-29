@@ -37,17 +37,23 @@ public class ResourceLoader {
 //        return builder.toString();
 //    }
 
-    static public void extract(String name, String destination) {
+    static public void extract(String name, String destination, boolean replace) {
         Path destinationPath = Paths.get(destination).resolve(name);
 
         try {
             Files.createDirectories(destinationPath.getParent());
 
-            Files.copy(ResourceLoader.getResourceAsStream(name), destinationPath);
+            if (!Files.exists(destinationPath) || replace) {
+                Files.copy(ResourceLoader.getResourceAsStream(name), destinationPath);
+            }
         } catch (IOException ignored) {}
     }
 
+    static public void extract(String name, boolean replace) {
+        extract(name, "", replace);
+    }
+
     static public void extract(String name) {
-        extract(name, "");
+        extract(name, false);
     }
 }

@@ -1,0 +1,54 @@
+<html>
+<head>
+    <style>
+        table{
+            border-spacing: 0px;
+            border-collapse: collapse;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            text-orientation: mixed;
+            white-space: nowrap;
+        }
+
+        .header-text {
+            font-weight: bold;
+            text-align: center;
+        }
+
+        td {
+            padding: 5px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+<table border="1">
+    <th colspan="2">
+        День/Пара
+    </th>
+    <th>
+        ИС-122
+    </th>
+
+    <tr>
+        <td class="vertical-text header-text" rowspan="2">Понедельник</td>
+        <td class="header-text">1</td>
+
+        <td>Интерфейсы информационных систем ЛБ 2,4,6,8 Комкова С.В. ИС-120 411/2
+            <br>
+            <br>
+            Интерфейсы информационных систем ЛК 1/7 Комкова С.В. ИС-120 411/2
+        </td>
+    </tr>
+    <tr>
+        <td class="header-text">2</td>
+
+        <td>Интерфейсы информационных систем ЛК 1/7 Комкова С.В. ИС-120 411/2</td>
+    </tr>
+</table>
+</body>
+</html>

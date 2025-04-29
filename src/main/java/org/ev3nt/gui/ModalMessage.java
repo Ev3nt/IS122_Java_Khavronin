@@ -3,9 +3,9 @@ package org.ev3nt.gui;
 import javax.swing.*;
 import java.awt.*;
 
-public class UpdatingMessage {
-    public static void wait(JFrame parent, String text, Runnable func) {
-        JDialog dialog = new JDialog(parent, "Обновление данных", true);
+public class ModalMessage {
+    public static void wait(JFrame parent, String title, String text, Runnable func) {
+        JDialog dialog = new JDialog(parent, title, true);
 
         dialog.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         dialog.setLayout(new BorderLayout());

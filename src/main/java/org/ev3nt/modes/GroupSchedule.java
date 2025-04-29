@@ -6,7 +6,7 @@ import freemarker.template.TemplateException;
 import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.files.ResourceLoader;
 import org.ev3nt.files.ZipCustomCopy;
-import org.ev3nt.gui.UpdatingMessage;
+import org.ev3nt.gui.ModalMessage;
 import org.ev3nt.gui.Window;
 import org.ev3nt.utils.StringUtils;
 import org.ev3nt.web.WebGroups;
@@ -16,6 +16,7 @@ import org.ev3nt.web.dto.ScheduleDTO;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -116,8 +117,10 @@ public class GroupSchedule implements ScheduleMode{
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, buttonPanel.getPreferredSize().height));
 
         JButton createSchedule = new JButton("Создать расписание");
+        JButton flatSchedule = new JButton("Создать общее расписание");
 
         buttonPanel.add(createSchedule);
+        buttonPanel.add(flatSchedule);
 
         panel.add(groupPanel);
         panel.add(Box.createVerticalStrut(10));
@@ -181,38 +184,9 @@ public class GroupSchedule implements ScheduleMode{
             }
         });
 
-        createSchedule.addActionListener(e -> {
-            List<String> selectedGroups = favouriteList.getSelectedValuesList();
+        createSchedule.addActionListener(e -> createSchedule(false));
 
-            if (selectedGroups.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Ни одна группа не выбрана!\nПожалуйста, выделите нужные группы в списке.",
-                        "Не удалось создать расписание",
-                        JOptionPane.WARNING_MESSAGE
-                );
-
-                return;
-            }
-
-            try {
-                process(selectedGroups, parent.getSemester(), parent.getYear(), parent.getScheduleFormat());
-
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Расписание создано!",
-                        "Успех",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-            } catch (IOException | TemplateException | RuntimeException ex) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        ex.getMessage(),
-                        "Не удалось создать расписание",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
-        });
+        flatSchedule.addActionListener(e -> createSchedule(true));
 
         InitFields();
 
@@ -242,9 +216,7 @@ public class GroupSchedule implements ScheduleMode{
             favouriteList.repaint();
         }
 
-        parent.addUpdateDataCallback(e -> {
-            UpdatingMessage.wait(parent.getWindow(), "Обновление списка групп...", this::updateGroups);
-        });
+        parent.addUpdateDataCallback(e -> ModalMessage.wait(parent.getWindow(), "Обновление данных", "Обновление списка групп...", this::updateGroups));
     }
 
     static class FacultyItem {
@@ -260,6 +232,41 @@ public class GroupSchedule implements ScheduleMode{
 
         String label;
         List<String> groups;
+    }
+
+    void createSchedule(boolean isFlat) {
+        ModalMessage.wait(parent.getWindow(), "Создание расписания", "Расписание создаётся...", () -> {
+            List<String> selectedGroups = favouriteList.getSelectedValuesList();
+
+            if (selectedGroups.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Ни одна группа не выбрана!\nПожалуйста, выделите нужные группы в списке.",
+                        "Не удалось создать расписание",
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                return;
+            }
+
+            try {
+                process(selectedGroups, parent.getSemester(), parent.getYear(), parent.getScheduleFormat(), isFlat);
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Расписание создано!",
+                        "Успех",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } catch (IOException | TemplateException | RuntimeException ex) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        ex.getMessage(),
+                        "Не удалось создать расписание",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
     }
 
     String preparePlainText(LessonDTO lesson) {
@@ -279,11 +286,19 @@ public class GroupSchedule implements ScheduleMode{
         return text.toString();
     }
 
-    void createSchedule(Template template, List<String> groups, int semester, int year)
+    void createSchedule(Template template, List<String> groups, int semester, int year, boolean isFlat)
             throws IOException, TemplateException {
+
+        List<Boolean> groupZaoch = groups.stream().map(group -> group.contains("з-")).collect(Collectors.toList());
+
+        if (isFlat && groupZaoch.contains(false) && groupZaoch.contains(true)) {
+            throw new IOException("Нельзя одновременно отображать очные и заочные группы!");
+        }
 
         Map<String, Object> root = new HashMap<>();
         List<Map<String, Object>> groupList = new ArrayList<>();
+        List<Integer> days = new ArrayList<>();
+        Map<Integer, List<Integer>> lessonsCounts = new HashMap<>();
         for (String groupName : groups) {
             ScheduleDTO schedule = WebSchedule.getGroupSchedule(groupName, semester, year);
 
@@ -294,6 +309,11 @@ public class GroupSchedule implements ScheduleMode{
             Map<Integer, Map<Integer, List<LessonDTO>>> disciplines = schedule.getDisciplines();
 
             schedule.prepareDisciplines(this::preparePlainText);
+
+            days.addAll(new ArrayList<>(disciplines.keySet()));
+            disciplines.forEach((k, v) -> lessonsCounts
+                    .computeIfAbsent(k, e -> new ArrayList<>())
+                    .addAll(v.keySet()));
 
             List<String> rowNames = groupName.contains("з-")
                     ? generateWeekDates(semester, year)
@@ -308,6 +328,23 @@ public class GroupSchedule implements ScheduleMode{
             groupList.add(group);
         }
 
+        days = days.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
+        lessonsCounts.replaceAll((k, v) -> v.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList()));
+
+        List<String> rowNames = groupZaoch.contains(false)
+                ? Arrays.asList("Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье")
+                : generateWeekDates(semester, year);
+
+        root.put("days", days);
+        root.put("lessonsCounts", lessonsCounts);
+        root.put("rowNames", rowNames);
         root.put("schedules", groupList);
 
         StringWriter writer = new StringWriter();
@@ -317,13 +354,19 @@ public class GroupSchedule implements ScheduleMode{
             Files.createDirectory(Paths.get("schedules"));
         } catch (IOException ignored) {}
 
-        ZipCustomCopy zip = new ZipCustomCopy(
-                StringUtils.getFileNameByList("schedules", groups, ".docx"),
-                templatesPath.resolve("Template.docx").toString());
+        if (!isFlat) {
+            ZipCustomCopy zip = new ZipCustomCopy(
+                    StringUtils.getFileNameByList("schedules", groups, ".docx"),
+                    templatesPath.resolve("Template.docx").toString());
 
-        zip.add("word/document.xml", writer.toString());
+            zip.add("word/document.xml", writer.toString());
 
-        zip.close();
+            zip.close();
+        } else {
+            FileOutputStream file = new FileOutputStream(StringUtils.getFileNameByList("schedules", groups, ".html"));
+            file.write(writer.toString().getBytes());
+            file.close();
+        }
     }
 
     List<String> generateWeekDates(int semester, int year) {
@@ -339,27 +382,35 @@ public class GroupSchedule implements ScheduleMode{
                 .collect(Collectors.toList());
     }
 
-    void process(List<String> groups, int semester, int year, boolean combined)
+    void process(List<String> groups, int semester, int year, boolean combined, boolean isFlat)
             throws IOException, TemplateException, RuntimeException {
 
-        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
-        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+        if (!isFlat) {
+            ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
+            ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+        } else {
+            ResourceLoader.extract(templatesPath.resolve("template.html").toString());
+        }
 
         Configuration cfg = new Configuration();
         cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
 
-        Template template = cfg.getTemplate("document.xml");
+        Template template = !isFlat ? cfg.getTemplate("document.xml") : cfg.getTemplate("template.html");
 
-        if (combined) {
-            createSchedule(template, groups, semester, year);
+        if (!isFlat) {
+            if (combined) {
+                createSchedule(template, groups, semester, year, false);
+            } else {
+                groups.forEach(group -> {
+                    try {
+                        createSchedule(template, Collections.singletonList(group), semester, year, false);
+                    } catch (IOException | TemplateException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
         } else {
-            groups.forEach(group -> {
-                try {
-                    createSchedule(template, Collections.singletonList(group), semester, year);
-                } catch (IOException | TemplateException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            createSchedule(template, groups, semester, year, true);
         }
     }
 

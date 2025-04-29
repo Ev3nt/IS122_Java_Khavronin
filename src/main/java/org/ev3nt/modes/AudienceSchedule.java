@@ -6,6 +6,7 @@ import freemarker.template.TemplateException;
 import org.ev3nt.files.FavouriteManager;
 import org.ev3nt.files.ResourceLoader;
 import org.ev3nt.files.ZipCustomCopy;
+import org.ev3nt.gui.ModalMessage;
 import org.ev3nt.gui.Window;
 import org.ev3nt.utils.StringUtils;
 import org.ev3nt.web.WebGroups;
@@ -15,6 +16,7 @@ import org.ev3nt.web.dto.ScheduleDTO;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -101,8 +103,10 @@ public class AudienceSchedule implements ScheduleMode{
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, buttonPanel.getPreferredSize().height));
 
         JButton createSchedule = new JButton("Создать расписание");
+        JButton flatSchedule = new JButton("Создать общее расписание");
 
         buttonPanel.add(createSchedule);
+        buttonPanel.add(flatSchedule);
 
         panel.add(audiencePanel);
         panel.add(Box.createVerticalStrut(10));
@@ -157,42 +161,9 @@ public class AudienceSchedule implements ScheduleMode{
             }
         });
 
-        createSchedule.addActionListener(e -> {
-            List<String> selectedAudiences = favouriteList.getSelectedValuesList()
-                    .stream()
-                    .map(String::toLowerCase)
-                    .collect(Collectors.toList());
+        createSchedule.addActionListener(e -> createSchedule(false));
 
-            if (selectedAudiences.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Ни одна аудитория не выбрана!\n" +
-                                "Пожалуйста, выделите нужные аудитории в списке.",
-                        "Не удалось создать расписание",
-                        JOptionPane.WARNING_MESSAGE
-                );
-
-                return;
-            }
-
-            try {
-                process(selectedAudiences, parent.getSemester(), parent.getYear(), parent.getScheduleFormat());
-
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Расписание создано!",
-                        "Успех",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-            } catch (IOException | TemplateException | RuntimeException ex) {
-                JOptionPane.showMessageDialog(
-                        null,
-                        ex.getMessage(),
-                        "Не удалось создать расписание",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
-        });
+        flatSchedule.addActionListener(e -> createSchedule(true));
 
         InitFields();
 
@@ -211,6 +182,45 @@ public class AudienceSchedule implements ScheduleMode{
 
             favouriteList.repaint();
         }
+    }
+
+    void createSchedule(boolean isFlat) {
+        ModalMessage.wait(parent.getWindow(), "Создание расписания", "Расписание создаётся...", () -> {
+            List<String> selectedAudiences = favouriteList.getSelectedValuesList()
+                    .stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toList());
+
+            if (selectedAudiences.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Ни одна аудитория не выбрана!\n" +
+                                "Пожалуйста, выделите нужные аудитории в списке.",
+                        "Не удалось создать расписание",
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                return;
+            }
+
+            try {
+                process(selectedAudiences, parent.getSemester(), parent.getYear(), parent.getScheduleFormat(), isFlat);
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Расписание создано!",
+                        "Успех",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } catch (IOException | TemplateException | RuntimeException ex) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        ex.getMessage(),
+                        "Не удалось создать расписание",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
     }
 
     String preparePlainText(LessonDTO lesson) {
@@ -260,7 +270,7 @@ public class AudienceSchedule implements ScheduleMode{
                 .orElse("");
     }
 
-    void createSchedule(Template template, List<String> audiences, int semester, int year)
+    void createSchedule(Template template, List<String> audiences, int semester, int year, boolean isFlat)
             throws IOException, TemplateException {
 
         List<String> groups = WebGroups.getGroups().values().stream()
@@ -283,19 +293,21 @@ public class AudienceSchedule implements ScheduleMode{
         Map<String, Object> root = new HashMap<>();
         List<String> audiencesNames = new ArrayList<>();
         List<Map<String, Object>> audienceList = new ArrayList<>();
+        List<Integer> days = new ArrayList<>();
+        Map<Integer, List<Integer>> lessonsCounts = new HashMap<>();
         for (String audience : audiences) {
-            Map<Integer, Map<Integer, List<LessonDTO>>> lessonsSchedule = new HashMap<>();
+            Map<Integer, Map<Integer, List<LessonDTO>>> disciplines = new HashMap<>();
             String audienceName = "";
 
             for (ScheduleDTO schedule : schedules) {
-                collectAudienceLessons(schedule, audience, lessonsSchedule);
+                collectAudienceLessons(schedule, audience, disciplines);
 
                 if (audienceName.isEmpty()) {
                     audienceName = extractAudienceName(schedule, audience);
                 }
             }
 
-            if (lessonsSchedule.isEmpty() || audienceName.isEmpty()) {
+            if (disciplines.isEmpty() || audienceName.isEmpty()) {
                 throw new RuntimeException("Аудитория не была найдена ни в одном расписании!\nАудитория: " + audience);
             }
 
@@ -303,9 +315,14 @@ public class AudienceSchedule implements ScheduleMode{
                          + audienceName.substring(1);
 
             ScheduleDTO schedule = new ScheduleDTO();
-            schedule.setDisciplines(lessonsSchedule);
+            schedule.setDisciplines(disciplines);
 
             schedule.prepareDisciplines(this::preparePlainText);
+
+            days.addAll(new ArrayList<>(disciplines.keySet()));
+            disciplines.forEach((k, v) -> lessonsCounts
+                    .computeIfAbsent(k, e -> new ArrayList<>())
+                    .addAll(v.keySet()));
 
             Map<String, Object> audienceMap = new HashMap<>();
             audienceMap.put("title", audienceName);
@@ -321,6 +338,19 @@ public class AudienceSchedule implements ScheduleMode{
             audienceList.add(audienceMap);
         }
 
+        days = days.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
+        lessonsCounts.replaceAll((k, v) -> v.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList()));
+
+        root.put("days", days);
+        root.put("lessonsCounts", lessonsCounts);
+        root.put("rowNames", rowNames);
         root.put("schedules", audienceList);
 
         StringWriter writer = new StringWriter();
@@ -330,36 +360,50 @@ public class AudienceSchedule implements ScheduleMode{
             Files.createDirectory(Paths.get("schedules"));
         } catch (IOException ignored) { }
 
-        ZipCustomCopy zip = new ZipCustomCopy(
-                StringUtils.getFileNameByList("schedules", audiencesNames, ".docx"),
-                templatesPath.resolve("Template.docx").toString());
+        if (!isFlat) {
+            ZipCustomCopy zip = new ZipCustomCopy(
+                    StringUtils.getFileNameByList("schedules", audiencesNames, ".docx"),
+                    templatesPath.resolve("Template.docx").toString());
 
-        zip.add("word/document.xml", writer.toString());
+            zip.add("word/document.xml", writer.toString());
 
-        zip.close();
+            zip.close();
+        } else {
+            FileOutputStream file = new FileOutputStream(StringUtils.getFileNameByList("schedules", audiencesNames, ".html"));
+            file.write(writer.toString().getBytes());
+            file.close();
+        }
     }
 
-    void process(List<String> audiences, int semester, int year, boolean combined)
+    void process(List<String> audiences, int semester, int year, boolean combined, boolean isFlat)
             throws IOException, TemplateException, RuntimeException {
 
-        ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
-        ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+        if (!isFlat) {
+            ResourceLoader.extract(templatesPath.resolve("document.xml").toString());
+            ResourceLoader.extract(templatesPath.resolve("Template.docx").toString());
+        } else {
+            ResourceLoader.extract(templatesPath.resolve("template.html").toString());
+        }
 
         Configuration cfg = new Configuration();
         cfg.setDirectoryForTemplateLoading(templatesPath.toAbsolutePath().toFile());
 
-        Template template = cfg.getTemplate("document.xml");
+        Template template = !isFlat ? cfg.getTemplate("document.xml") : cfg.getTemplate("template.html");
 
-        if (combined) {
-            createSchedule(template, audiences, semester, year);
+        if (!isFlat) {
+            if (combined) {
+                createSchedule(template, audiences, semester, year, false);
+            } else {
+                audiences.forEach(teacher -> {
+                    try {
+                        createSchedule(template, Collections.singletonList(teacher), semester, year, false);
+                    } catch (IOException | TemplateException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
         } else {
-            audiences.forEach(teacher -> {
-                try {
-                    createSchedule(template, Collections.singletonList(teacher), semester, year);
-                } catch (IOException | TemplateException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            createSchedule(template, audiences, semester, year, true);
         }
     }
 
