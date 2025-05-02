@@ -1,4 +1,3 @@
-<html>
 <head>
     <style>
         table{
@@ -25,30 +24,43 @@
     </style>
 </head>
 
-<body>
 <table border="1">
     <th colspan="2">
         День/Пара
     </th>
+
+    <#list schedules as schedule>
     <th>
-        ИС-122
+        ${schedule.title}
     </th>
+    </#list>
 
+    <#list days as dayNumber>
+    <#assign lessonsList = lessonsCounts?values[lessonsCounts?keys?seq_index_of(dayNumber)]>
+    <#list lessonsList as lessonNumber>
     <tr>
-        <td class="vertical-text header-text" rowspan="2">Понедельник</td>
-        <td class="header-text">1</td>
+        <#if lessonNumber?is_first>
+        <td class="vertical-text header-text" rowspan="${lessonsList?size}">${rowNames[dayNumber - 1]}</td>
+        </#if>
+        <td class="header-text">${lessonNumber}</td>
 
-        <td>Интерфейсы информационных систем ЛБ 2,4,6,8 Комкова С.В. ИС-120 411/2
-            <br>
-            <br>
-            Интерфейсы информационных систем ЛК 1/7 Комкова С.В. ИС-120 411/2
-        </td>
-    </tr>
-    <tr>
-        <td class="header-text">2</td>
+        <#list schedules as schedule>
+            <td>
+                <#assign dayIndex = schedule.schedule?keys?seq_index_of(dayNumber)!-1>
+                <#assign dayLessons = (dayIndex >= 0)?then(schedule.schedule?values[dayIndex], {})>
 
-        <td>Интерфейсы информационных систем ЛК 1/7 Комкова С.В. ИС-120 411/2</td>
+                <#assign lessonIndex = dayLessons?keys?seq_index_of(lessonNumber)!-1>
+                <#assign lessons = (lessonIndex >= 0)?then(dayLessons?values[lessonIndex], [])>
+
+                <#list lessons as lesson>
+                    <#if !lesson?is_first><br></#if>
+                    ${lesson.getPlainText()}
+                </#list>
+            </td>
+        </#list>
     </tr>
+    </#list>
+    </#list>
 </table>
 </body>
 </html>
