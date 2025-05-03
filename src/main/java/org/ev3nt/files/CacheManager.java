@@ -18,9 +18,7 @@ public class CacheManager {
         if (name != null) {
             try {
                 Files.createDirectory(cacheDir);
-            } catch (IOException e) {
-//                throw new RuntimeException(e);
-            }
+            } catch (IOException ignored) {}
 
             try {
                 Path fullName = cacheDir.resolve(name);
@@ -66,8 +64,6 @@ public class CacheManager {
                 stream.write(data.getBytes(StandardCharsets.UTF_8));
 
                 stream.close();
-
-//                lastCachedFileName = name;
             } catch (IOException ignored) {}
         }
     }

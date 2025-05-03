@@ -6,6 +6,8 @@
 
 * FreeMarker
 * Jackson
+* Jsoup
+* Junit
 
 ## Используемые плагины
 

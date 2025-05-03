@@ -28,7 +28,7 @@ public class WebSchedule {
     static Map<Integer, Map<Integer, List<LessonDTO>>> parseDisciplines(Map<?, ?> disciplines) {
         Map<Integer, Map<Integer, List<LessonDTO>>> schedule = new HashMap<>();
 
-        boolean zaoch = disciplines.size() == 1;
+        boolean zaoch = (disciplines.size() == 1) && disciplines.containsKey("6");
         for (Map.Entry<?, ?> dayEntry : disciplines.entrySet()) {
             Integer day = obj2Int(dayEntry.getKey());
             Object dayObj = dayEntry.getValue();

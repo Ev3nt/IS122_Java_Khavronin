@@ -138,6 +138,8 @@ public class LessonDTO {
         this.plain_text = plain_text;
     }
 
+    // Используется в шаблонах
+    @SuppressWarnings("unused")
     public String getPlainText() {
         return plain_text;
     }
