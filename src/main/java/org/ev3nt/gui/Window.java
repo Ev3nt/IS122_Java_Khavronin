@@ -70,7 +70,7 @@ public class Window {
 
     void InitFields() {
         for (int i = Year.now().getValue(); i > 2011; i--) {
-            yearComboBox.addItem(new YearItem(i - 1 + " - " + i, i - 1));
+            yearComboBox.addItem(new YearItem(i + " - " + (i + 1), i));
         }
 
         semesterComboBox.addItem(new SemesterItem("Весенний", 2));
