@@ -17,6 +17,7 @@ public class LessonDTO {
     String under_group_1;
     String under_group_2;
     String group_name;
+    boolean date;
 
     @JsonIgnore
     String plain_text;
