@@ -17,7 +17,7 @@ public class LessonDTO {
     String under_group_1;
     String under_group_2;
     String group_name;
-    boolean date;
+    String date;
 
     @JsonIgnore
     String plain_text;
@@ -126,9 +126,9 @@ public class LessonDTO {
         this.under_group_2 = under_group_2;
     }
 
-    public void setDate(boolean date) { this.date = date; }
+    public void setDate(String date) { this.date = date; }
 
-    public boolean getDate() { return date; }
+    public String getDate() { return date; }
 
     @SuppressWarnings("unused")
     public String getGroup_name() {

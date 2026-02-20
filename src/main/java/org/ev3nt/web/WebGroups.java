@@ -62,7 +62,9 @@ public class WebGroups {
 
                 String groupName = label.text();
 
-                groupsList.add(groupName);
+                if (groupName.matches("^[A-Za-zА-Яа-яЁё]+-\\d+$")) {
+                    groupsList.add(groupName);
+                }
             }
 
             groups.put(faculty, groupsList);
